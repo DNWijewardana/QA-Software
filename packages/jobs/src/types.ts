@@ -1,0 +1,60 @@
+/**
+ * Job/scan domain types for the async delivery layer (§VI.6, §VI.7).
+ */
+
+import type { JobState, ScanResult } from '@qa/core';
+import { SCAN_STAGES, type ScanStage } from '@qa/orchestrator';
+
+export interface ScanJobPayload {
+  scanId: string;
+  projectId: string;
+  projectDir: string;
+  evidenceDir: string;
+}
+
+/** Honest, stage-based progress — derived from the ordinal of the current stage, never fabricated (§VI.6). */
+export interface ScanProgress {
+  stage: ScanStage | 'QUEUED';
+  completedStages: number;
+  totalStages: number;
+  pct: number;
+}
+
+export interface ScanRecord {
+  scanId: string;
+  projectId: string;
+  state: JobState;
+  progress: ScanProgress;
+  createdAt: string;
+  updatedAt: string;
+  /** Present only when state === COMPLETED. */
+  result?: ScanResult;
+  /** Present only when state === FAILED. */
+  error?: string;
+}
+
+export const TOTAL_STAGES = SCAN_STAGES.length;
+
+/** Map an orchestrator stage to a job state (both vocabularies are shared with @qa/core). */
+export function stageToState(stage: ScanStage): JobState {
+  return stage as JobState; // stage names are a subset of JOB_STATES by construction
+}
+
+/** Compute deterministic progress for a stage. */
+export function progressForStage(stage: ScanStage): ScanProgress {
+  const idx = SCAN_STAGES.indexOf(stage);
+  const completed = idx + 1;
+  return {
+    stage,
+    completedStages: completed,
+    totalStages: TOTAL_STAGES,
+    pct: Math.round((completed / TOTAL_STAGES) * 100),
+  };
+}
+
+export const QUEUED_PROGRESS: ScanProgress = {
+  stage: 'QUEUED',
+  completedStages: 0,
+  totalStages: TOTAL_STAGES,
+  pct: 0,
+};

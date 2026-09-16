@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@qa/core": ["../../packages/core/src/index.ts"],
+      "@qa/jobs": ["../../packages/jobs/src/index.ts"],
+      "@qa/jobs/adapters": ["../../packages/jobs/src/adapters/index.ts"],
+      "@qa/orchestrator": ["../../packages/orchestrator/src/index.ts"],
+      "@qa/reporters": ["../../packages/reporters/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

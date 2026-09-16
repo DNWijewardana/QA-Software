@@ -1,0 +1,17 @@
+{
+  "name": "@qa/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "qa-scan": "./src/index.ts"
+  },
+  "dependencies": {
+    "@qa/core": "*",
+    "@qa/orchestrator": "*",
+    "@qa/reporters": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

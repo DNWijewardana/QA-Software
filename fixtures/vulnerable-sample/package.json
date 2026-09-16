@@ -1,0 +1,14 @@
+{
+  "name": "vulnerable-sample",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Intentionally-vulnerable fixture for the QA platform's golden test corpus (spec X.3). NOT a real app.",
+  "dependencies": {
+    "express": "^4.18.0",
+    "react": "^18.2.0",
+    "left-pad": "*"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

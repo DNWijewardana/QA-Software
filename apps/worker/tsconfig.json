@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@qa/jobs": ["../../packages/jobs/src/index.ts"],
+      "@qa/jobs/adapters": ["../../packages/jobs/src/adapters/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

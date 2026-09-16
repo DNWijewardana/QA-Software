@@ -1,0 +1,36 @@
+# Local infra for the DISTRIBUTED deployment (§VI.7): Redis broker (BullMQ) + PostgreSQL store.
+# Bring it up, then run the API (producer) and worker (consumer) as separate processes:
+#
+#   docker compose up -d
+#   export QA_REDIS_URL=redis://127.0.0.1:6380
+#   export QA_DATABASE_URL=postgres://postgres:qa@127.0.0.1:5433/qa
+#   npm run api        # terminal 1 (pure producer)
+#   npm run worker     # terminal 2 (long-lived consumer)
+#
+# Without these env vars the platform runs single-process in-memory (zero infra).
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: qa-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: qa-postgres
+    environment:
+      POSTGRES_PASSWORD: qa
+      POSTGRES_DB: qa
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

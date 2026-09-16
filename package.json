@@ -13,7 +13,8 @@
     "packages/jobs",
     "apps/cli",
     "apps/api",
-    "apps/worker"
+    "apps/worker",
+    "apps/web"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -21,7 +22,8 @@
     "test:watch": "vitest",
     "scan": "tsx apps/cli/src/index.ts",
     "api": "tsx apps/api/src/main.ts",
-    "worker": "tsx apps/worker/src/main.ts"
+    "worker": "tsx apps/worker/src/main.ts",
+    "web": "npm -w @qa/web run dev"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

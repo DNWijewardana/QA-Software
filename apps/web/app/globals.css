@@ -1,0 +1,233 @@
+/*
+ * Platform UI styles. The platform's own UI must meet WCAG 2.2 AA (spec IX.8):
+ * - semantic landmarks, visible focus, sufficient contrast, no meaning by color alone,
+ *   respects reduced motion, works at phone width with no horizontal scroll.
+ */
+
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #cdd3dc;
+  --text: #14181f;
+  --text-muted: #4a5361;
+  --accent: #1f5fd6;
+  --accent-text: #ffffff;
+  --focus: #0b3d91;
+
+  /* Severity — always paired with a text label; colors chosen for >=4.5:1 on --surface. */
+  --sev-critical: #a11020;
+  --sev-high: #a63a00;
+  --sev-medium: #7a5b00;
+  --sev-low: #29506b;
+  --sev-info: #4a5361;
+
+  --go: #1c6b2f;
+  --nogo: #a11020;
+  --conditions: #7a5b00;
+  --insufficient: #4a5361;
+
+  --radius: 8px;
+  --maxw: 1100px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e1116;
+    --surface: #171b22;
+    --surface-2: #1f242d;
+    --border: #333b47;
+    --text: #e8ebf0;
+    --text-muted: #a4adbb;
+    --accent: #6ea8ff;
+    --accent-text: #0e1116;
+    --focus: #9ec5ff;
+    --sev-critical: #ff8a8a;
+    --sev-high: #ffb27a;
+    --sev-medium: #e6c766;
+    --sev-low: #9ccbe6;
+    --sev-info: #a4adbb;
+    --go: #7fd394;
+    --nogo: #ff8a8a;
+    --conditions: #e6c766;
+    --insufficient: #a4adbb;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip link for keyboard users (WCAG 2.4.1). */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  padding: 0.6rem 1rem;
+  z-index: 100;
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus { left: 0; }
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.site-header .inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.site-header h1 { font-size: 1.15rem; margin: 0; }
+.site-header .tag { color: var(--text-muted); font-size: 0.85rem; }
+
+main {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+h2 { font-size: 1.3rem; margin: 1.75rem 0 0.75rem; }
+h3 { font-size: 1.05rem; margin: 1.25rem 0 0.5rem; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+
+.muted { color: var(--text-muted); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em; }
+
+form .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; max-width: 640px; }
+label { font-weight: 600; }
+select, input[type='text'] {
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.05); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+
+.notice {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--conditions);
+  background: var(--surface-2);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  margin: 1rem 0;
+}
+.notice.error { border-left-color: var(--nogo); }
+
+/* Progress */
+.progress-track {
+  height: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill { transition: none; }
+}
+
+/* Decision banner */
+.decision {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  border: 2px solid currentColor;
+}
+.decision.GO { color: var(--go); }
+.decision.NO_GO { color: var(--nogo); }
+.decision.GO_WITH_CONDITIONS { color: var(--conditions); }
+.decision.INSUFFICIENT_EVIDENCE { color: var(--insufficient); }
+
+/* Severity badge — text label + color; never color alone (WCAG 1.4.1). */
+.sev {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.sev.Critical { color: var(--sev-critical); }
+.sev.High { color: var(--sev-high); }
+.sev.Medium { color: var(--sev-medium); }
+.sev.Low { color: var(--sev-low); }
+.sev.Informational { color: var(--sev-info); }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+caption { text-align: left; color: var(--text-muted); padding: 0.4rem 0; }
+th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th[scope='col'] { border-bottom: 2px solid var(--border); }
+tbody tr:hover { background: var(--surface-2); }
+
+.scan-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+.scan-list li { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0.7rem 0.9rem; }
+
+.row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+.grow { flex: 1 1 auto; }
+
+.report-links { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
+.report-links a {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-decoration: none;
+  color: var(--text);
+}
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

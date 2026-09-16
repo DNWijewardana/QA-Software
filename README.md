@@ -20,8 +20,9 @@ what it tested, what it did not, and how confident it is.**
 
 ## Status
 
-🚧 **Phase 2 — Breadth + delivery layer.** Design docs + tested vertical slice + supply-chain/SBOM engine +
-SARIF/CycloneDX/JUnit/CSV exports + async job queue, worker, and HTTP API (all SAFE_STATIC, infra-free).
+🚧 **Phase 2 — Breadth + full delivery layer.** Design docs + tested vertical slice + supply-chain/SBOM
+engine + SARIF/CycloneDX/JUnit/CSV exports + async job queue/worker/HTTP API + distributed BullMQ/Redis +
+PostgreSQL adapters + a Next.js web UI (all SAFE_STATIC).
 See [`docs/08-implementation-roadmap.md`](./docs/08-implementation-roadmap.md) for phase tracking.
 
 ### Run it
@@ -32,7 +33,10 @@ npm test                                   # 38 tests (BullMQ test auto-skips wi
 npm run scan -- fixtures/vulnerable-sample # one-shot CLI scan (dual output + exports)
 npm run worker -- fixtures/vulnerable-sample   # async worker demo (in-memory)
 npm run api                                # HTTP API on :4000 (SAFE_STATIC, path-guarded)
+npm run web                                # Next.js UI on :3000 (proxies to the API on :4000)
 ```
+
+The web UI needs the API running (`npm run api` in another terminal; set `QA_API_URL` to point elsewhere).
 
 **Distributed deployment** (API + worker as separate processes over Redis + PostgreSQL):
 
@@ -58,7 +62,7 @@ for evidence artifacts, optional search index for global search.
 
 | Path | Purpose |
 |---|---|
-| `apps/web` | Next.js frontend (must itself meet WCAG 2.2 AA — spec IX.8) — _not yet built_ |
+| `apps/web` | Next.js UI (BFF proxy to the API): submit → live status → findings → reports; WCAG 2.2 AA |
 | `apps/api` | HTTP API: submit scans, poll status, findings, reports/exports (spec VI.9) |
 | `apps/worker` | Worker that processes queued scan jobs (spec VI.6/VI.7) |
 | `apps/cli` | CLI driver for a one-shot SAFE_STATIC scan with dual output |

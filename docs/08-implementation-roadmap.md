@@ -75,7 +75,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.4 | API contract testing (OpenAPI drift) | ☐ |
 | 2.5 | Async delivery core `packages/jobs` (`JobQueue`/`ScanStore`/`ScanService`) + `apps/worker` | ✅ (in-memory adapter; BullMQ/Postgres next) |
 | 2.6 | `apps/api` — submit/status/findings/report+export endpoints, path-safety guard | ✅ (node:http; NestJS migration deferred — see doc 02) |
-| 2.7 | `apps/web` (Next.js) — upload → live status → findings → report/exports | ☐ |
+| 2.7 | `apps/web` (Next.js) — submit → live status → findings → report/exports (WCAG 2.2 AA) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ☐ |
 | 2.9 | Security (safe/authorized) · performance · IaC/CSPM · AI/LLM evals | ☐ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
@@ -93,6 +93,15 @@ adapter's real SQL is tested via pg-mem (4 tests), the BullMQ adapter via a Redi
 and the full **multi-process** path end-to-end — API (producer) → Redis → **separate worker process** →
 Postgres → API serves the result (COMPLETED, NO_GO, Critical persisted; Postgres row confirmed). No fake
 adapters (§XIII rule 27). 38/38 tests pass with services enabled.
+
+**2.7 result (web UI):** `apps/web` is a Next.js 14 App-Router UI built as a thin BFF that proxies to the
+API (same-origin route handlers → no CORS, and it bundles no `@qa/*` packages, so no Node-only code reaches
+the client). Screens: submit (project dropdown from `GET /targets`), live scan status with an accessible
+`role=progressbar`, findings table with severity filter, and one-click report/exports (human/JSON/SARIF/
+JUnit/CSV/CycloneDX). Accessibility (spec IX.8, WCAG 2.2 AA): semantic landmarks, skip link, visible focus,
+severity/decision conveyed by text+color (never color alone), reduced-motion support, light/dark, phone-width
+layout. Verified: `next build` clean (types + 8 routes), and a live run drove submit → COMPLETED → Critical
+finding entirely through the web proxy, with both pages server-rendering correctly.
 
 **2.5–2.6 result:** the orchestrator was refactored into `packages/orchestrator` (shared by CLI/worker/API).
 `packages/jobs` provides an infra-free async delivery core: an `InMemoryJobQueue` (FIFO, concurrency,

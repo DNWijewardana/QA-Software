@@ -16,5 +16,10 @@
   "include": [
     "packages/*/src/**/*.ts",
     "apps/*/src/**/*.ts"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "apps/web"
   ]
 }

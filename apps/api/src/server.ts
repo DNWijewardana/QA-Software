@@ -18,6 +18,8 @@
  */
 
 import http from 'node:http';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import { renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toJUnit, toSarif } from '@qa/reporters';
 import {
@@ -96,6 +98,26 @@ export function createApiServer(config: ApiConfig): ApiHandle {
     // GET /health
     if (method === 'GET' && url.pathname === '/health') {
       return json(res, 200, { status: 'ok', mode: 'SAFE_STATIC', queueDepth: await queue.size() });
+    }
+
+    // GET /targets  (candidate scan projects = immediate subdirs of each allowed root)
+    if (method === 'GET' && url.pathname === '/targets') {
+      const roots = await Promise.all(
+        config.allowedRoots.map(async (root) => {
+          let projects: Array<{ name: string; path: string }> = [];
+          try {
+            const entries = await fs.readdir(root, { withFileTypes: true });
+            projects = entries
+              .filter((e) => e.isDirectory())
+              .map((e) => ({ name: e.name, path: path.join(root, e.name) }))
+              .sort((a, b) => a.name.localeCompare(b.name));
+          } catch {
+            /* root missing/unreadable — return no projects for it */
+          }
+          return { root, projects };
+        }),
+      );
+      return json(res, 200, roots);
     }
 
     // GET /scans  (list)

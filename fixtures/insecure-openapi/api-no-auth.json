@@ -1,0 +1,17 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "No-Auth API", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.example.com" }],
+  "paths": {
+    "/ping": {
+      "get": {
+        "operationId": "ping",
+        "summary": "Health check",
+        "responses": {
+          "200": { "description": "ok" },
+          "500": { "description": "error" }
+        }
+      }
+    }
+  }
+}

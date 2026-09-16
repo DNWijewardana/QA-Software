@@ -53,6 +53,8 @@ export const CONTROL_CATALOG: CatalogControl[] = [
   // --- Supply chain / vulnerable components ---
   { framework: 'SOC 2 (illustrative)', controlId: 'CC7.1', title: 'Dependency hygiene (lockfile, pinned versions)', rules: ['SUP-LOCK-001', 'SUP-PIN-001'], providedByEngine: 'dependency-scanner' },
   { framework: 'OWASP Top 10 2025', controlId: 'A06', title: 'Vulnerable & outdated components', rules: ['SUP-LOCK-001', 'SUP-PIN-001'], providedByEngine: 'dependency-scanner' },
+  // --- API authentication (OWASP API Security Top 10) ---
+  { framework: 'OWASP API Security Top 10 2023', controlId: 'API2', title: 'API endpoints require authentication', rules: ['API-SPEC-NOAUTH-001', 'API-SPEC-OP-NOAUTH-001'], providedByEngine: 'openapi-scanner' },
   // --- Container image (CIS Docker) ---
   { framework: 'CIS Docker Benchmark', controlId: '4.1', title: 'Container runs as a non-root user', rules: ['IAC-DOCKER-USER-001'], providedByEngine: 'dockerfile-scanner' },
   { framework: 'CIS Docker Benchmark', controlId: '4.6', title: 'Image defines a HEALTHCHECK', rules: ['IAC-DOCKER-HEALTHCHECK-000'], providedByEngine: 'dockerfile-scanner' },

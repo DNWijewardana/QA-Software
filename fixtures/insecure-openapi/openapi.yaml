@@ -1,0 +1,25 @@
+# FIXTURE — intentionally weak OpenAPI spec for the golden corpus (spec X.3). NOT a real API.
+openapi: 3.0.3
+info:
+  title: Insecure Sample API
+  version: 1.0.0
+servers:
+  # SEEDED: cleartext HTTP server (API-SPEC-HTTP-001)
+  - url: http://api.example.com
+components:
+  securitySchemes:
+    # SEEDED: API key in the query string (API-SPEC-APIKEY-QUERY-001)
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api_key
+paths:
+  /users:
+    get:
+      # SEEDED: no security -> unprotected while schemes exist (API-SPEC-OP-NOAUTH-001)
+      # SEEDED: no operationId (API-SPEC-NO-OPID-001)
+      # SEEDED: no 4xx/5xx responses (API-SPEC-NO-ERRORS-001)
+      summary: List users
+      responses:
+        "200":
+          description: ok

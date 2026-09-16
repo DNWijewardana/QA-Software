@@ -135,8 +135,10 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   for (const engine of engines) {
     engineVersions[engine.name] = engine.version;
     if (!engine.appliesTo(ctx)) continue;
-    ranEngines.add(engine.name);
     const result = await engine.run(ctx);
+    // An engine counts as having "run" (for compliance assessment) only if it actually executed checks —
+    // e.g. the OpenAPI engine applies to any JSON/YAML but does no work when no spec is present.
+    if (result.executedChecks > 0) ranEngines.add(engine.name);
     allFindings.push(...result.findings);
     allArtifacts.push(...result.artifacts);
     if (result.sbom) sbom = result.sbom;
@@ -231,6 +233,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
 /** Which dimension a finding belongs to, derived from its category (kept explicit & auditable). */
 function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Security') return 'Security';
+  if (f.category === 'API') return 'Security'; // API security findings score under Security
   if (f.category === 'Maintainability') return 'Maintainability';
   if (f.category === 'SupplyChain') return 'SupplyChainHealth';
   if (f.category === 'CloudIaC') return 'CloudIaCPosture';

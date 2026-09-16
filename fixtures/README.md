@@ -81,6 +81,23 @@ An intentionally-insecure `docker-compose.yml` for the `ComposeScanner` (spec V.
 `tests/compose.test.ts` asserts each rule fires, the privileged service + socket mount force `NO_GO`, the
 seeded secret is redacted, and the CIS Docker 5.31 (Docker-socket) compliance control shows a gap.
 
+## `insecure-openapi/`
+
+A weak OpenAPI spec pair (`openapi.yaml` with schemes; `api-no-auth.json` with none) for the
+`OpenApiScanner` (spec V.6, OWASP API Security Top 10 2023):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| No security scheme defined (JSON spec) | `API-SPEC-NOAUTH-001` | High |
+| Operation unprotected while schemes exist | `API-SPEC-OP-NOAUTH-001` | High |
+| Cleartext HTTP server | `API-SPEC-HTTP-001` | Medium |
+| API key in query string | `API-SPEC-APIKEY-QUERY-001` | Medium |
+| Operation with no error responses | `API-SPEC-NO-ERRORS-001` | Low |
+| Operation missing `operationId` | `API-SPEC-NO-OPID-001` | Informational |
+
+`tests/openapi.test.ts` asserts each rule fires, the OWASP API2 compliance control shows a gap, findings
+score under Security, and ordinary (non-spec) JSON/YAML is NOT flagged.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

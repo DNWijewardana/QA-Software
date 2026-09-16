@@ -81,6 +81,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
 | 2.12 | Kubernetes manifest security engine (CIS K8s / Pod Security Standards → `CloudIaCPosture`) | ✅ |
 | 2.13 | docker-compose security engine (CIS Docker → `CloudIaCPosture`; Docker-socket → compliance) | ✅ |
+| 2.14 | OpenAPI spec quality/security engine (OWASP API Security Top 10 → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -105,6 +106,15 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.14 result (OpenAPI engine):** `OpenApiScanner` analyses OpenAPI 3.x / Swagger 2.0 specs (YAML or JSON)
+and flags 6 issues mapped to OWASP API Security Top 10 2023 — no auth scheme, unprotected operation,
+cleartext HTTP server, API key in query string, missing error responses, missing operationId. Findings
+score under Security (category `API` → `Security` mapping) and the OWASP API2 control is added to the
+compliance catalog. Only files declaring `openapi`/`swagger` + `paths` are analysed, and the engine reports
+zero executed checks when no spec is present — so the API control is honestly `NOT_ASSESSED` (not a false
+"satisfied") on projects without a spec. Isolated fixture `fixtures/insecure-openapi`; 2 tests (all rules +
+no-false-positive on plain JSON/YAML).
 
 **2.13 result (docker-compose engine):** `ComposeScanner` parses compose files and flags 8 CIS-aligned
 service risks — privileged, **Docker socket mount** (container escape), host network mode, sensitive host

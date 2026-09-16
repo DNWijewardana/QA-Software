@@ -86,6 +86,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.16 | Static performance/asset-budget engine (§V.12 → Performance dim) | ✅ |
 | 2.17 | Static SEO analyzer (§V.24 — reported separately from software quality) | ✅ |
 | 2.18 | Logging-quality engine (§V.25 — sensitive-data-in-logs → Observability dim) | ✅ |
+| 2.19 | Error-handling engine (§V.14 — swallowed errors, exposed stack traces → Reliability dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -110,6 +111,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.19 result (error-handling engine):** `ErrorHandlingScanner` statically analyses JS/TS and flags empty
+catch blocks (`ERR-EMPTY-CATCH-001`), catch blocks that only console-log (`ERR-CATCH-CONSOLE-001`), error/
+stack traces sent to the client (`ERR-STACK-EXPOSED-001`, High, CWE-209), and thrown non-Error literals
+(`ERR-THROW-LITERAL-001`), feeding the Reliability dimension (default weight 0.15). Catch-body detection uses
+conservative brace matching — it skips nested-brace bodies rather than risk a miscount, avoiding false
+positives. Isolated fixture `fixtures/bad-error-handling`; 2 tests (all rules + robust code yields none).
 
 **2.18 result (logging engine):** `LoggingScanner` does line-based analysis of log calls in JS/TS and flags
 sensitive data written to logs (`OBS-LOG-SENSITIVE-001`, High, CWE-532), wholesale request/user-object

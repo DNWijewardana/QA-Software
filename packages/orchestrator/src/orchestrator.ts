@@ -256,5 +256,6 @@ function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Accessibility') return 'Accessibility';
   if (f.category === 'Performance') return 'Performance';
   if (f.category === 'Observability') return 'Observability';
+  if (f.category === 'Reliability') return 'Reliability';
   return 'Functional';
 }

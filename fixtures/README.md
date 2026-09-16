@@ -150,6 +150,20 @@ A JS file with leaky logging for the `LoggingScanner` (spec V.25):
 `tests/logging.test.ts` asserts each rule fires, the Observability dimension is scored, the SOC 2 CC7.2
 ("no sensitive data in logs") compliance control shows a gap, and clean structured logging yields no findings.
 
+## `bad-error-handling/`
+
+A JS file with poor error handling for the `ErrorHandlingScanner` (spec V.14):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Empty catch block | `ERR-EMPTY-CATCH-001` | Medium |
+| Catch only logs to console | `ERR-CATCH-CONSOLE-001` | Low |
+| Stack trace sent to the client | `ERR-STACK-EXPOSED-001` | High (CWE-209) |
+| Throwing a non-Error value | `ERR-THROW-LITERAL-001` | Low |
+
+`tests/error-handling.test.ts` asserts each rule fires, the Reliability dimension is scored, and robust
+error handling (real recovery / rethrow, generic client errors) yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

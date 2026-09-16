@@ -98,6 +98,26 @@ A weak OpenAPI spec pair (`openapi.yaml` with schemes; `api-no-auth.json` with n
 `tests/openapi.test.ts` asserts each rule fires, the OWASP API2 compliance control shows a gap, findings
 score under Security, and ordinary (non-spec) JSON/YAML is NOT flagged.
 
+## `inaccessible-html/`
+
+An intentionally-inaccessible HTML page for the `HtmlAccessibilityScanner` (spec V.5, WCAG 2.2):
+
+| Seeded defect | Expected rule | WCAG | Severity |
+|---|---|---|---|
+| `<html>` without `lang` | `A11Y-HTML-LANG-001` | 3.1.1 (A) | Medium |
+| Missing `<title>` | `A11Y-TITLE-001` | 2.4.2 (A) | Medium |
+| `<img>` without `alt` | `A11Y-IMG-ALT-001` | 1.1.1 (A) | Medium |
+| Form control with no label | `A11Y-INPUT-LABEL-001` | 1.3.1 (A) | High |
+| Button with no accessible name | `A11Y-BUTTON-NAME-001` | 4.1.2 (A) | High |
+| Link with no accessible name | `A11Y-LINK-NAME-001` | 2.4.4 (A) | High |
+| Positive `tabindex` | `A11Y-TABINDEX-001` | 2.4.3 (A) | Low |
+| `<iframe>` without title | `A11Y-IFRAME-TITLE-001` | 4.1.2 (A) | Medium |
+| Viewport disables zoom | `A11Y-VIEWPORT-001` | 1.4.4 (AA) | Medium |
+
+`tests/accessibility.test.ts` asserts each rule fires, findings carry the WCAG criterion, the Accessibility
+dimension is scored, a **manual WCAG audit** is queued (automation cannot prove conformance — §V.5), and a
+clean page yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

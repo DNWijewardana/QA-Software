@@ -1,0 +1,26 @@
+<!-- FIXTURE — intentionally inaccessible HTML for the golden corpus (spec X.3). NOT for real use. -->
+<!DOCTYPE html>
+<!-- SEEDED: <html> without lang (A11Y-HTML-LANG-001) -->
+<html>
+<head>
+  <!-- SEEDED: no <title> (A11Y-TITLE-001) -->
+  <!-- SEEDED: viewport disables zoom (A11Y-VIEWPORT-001) -->
+  <meta name="viewport" content="width=device-width, user-scalable=no">
+</head>
+<body>
+  <!-- SEEDED: image without alt (A11Y-IMG-ALT-001) -->
+  <img src="logo.png">
+  <form>
+    <!-- SEEDED: input without a label (A11Y-INPUT-LABEL-001) -->
+    <input type="text" name="email">
+    <!-- SEEDED: button with no accessible name (A11Y-BUTTON-NAME-001) -->
+    <button></button>
+  </form>
+  <!-- SEEDED: link with no accessible name (A11Y-LINK-NAME-001) -->
+  <a href="/page"></a>
+  <!-- SEEDED: positive tabindex (A11Y-TABINDEX-001) -->
+  <div tabindex="5">focusable</div>
+  <!-- SEEDED: iframe without title (A11Y-IFRAME-TITLE-001) -->
+  <iframe src="https://example.com"></iframe>
+</body>
+</html>

@@ -212,6 +212,15 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     releaseDecision,
     manualReviewQueue: [
       { item: 'Subjective UX and architecture review', reason: 'Requires human judgment (§V.4/§V.10).' },
+      ...(ranEngines.has('html-a11y-scanner')
+        ? [
+            {
+              item: 'Full WCAG 2.2 manual accessibility audit',
+              reason:
+                'Automated static checks cannot prove WCAG conformance (§V.5); keyboard operation, focus order, screen-reader output, and contrast-in-context require human testing.',
+            },
+          ]
+        : []),
     ],
     limitations: [
       'Only static analysis was performed (SAFE_STATIC). No dynamic, security-runtime, performance, or accessibility testing was executed.',
@@ -237,5 +246,6 @@ function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Maintainability') return 'Maintainability';
   if (f.category === 'SupplyChain') return 'SupplyChainHealth';
   if (f.category === 'CloudIaC') return 'CloudIaCPosture';
+  if (f.category === 'Accessibility') return 'Accessibility';
   return 'Functional';
 }

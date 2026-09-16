@@ -77,7 +77,8 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.6 | `apps/api` — submit/status/findings/report+export endpoints, path-safety guard | ✅ (node:http; NestJS migration deferred — see doc 02) |
 | 2.7 | `apps/web` (Next.js) — submit → live status → findings → report/exports (WCAG 2.2 AA) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ☐ |
-| 2.9 | Security (safe/authorized) · performance · IaC/CSPM · AI/LLM evals | ☐ |
+| 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
+| 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -93,6 +94,13 @@ adapter's real SQL is tested via pg-mem (4 tests), the BullMQ adapter via a Redi
 and the full **multi-process** path end-to-end — API (producer) → Redis → **separate worker process** →
 Postgres → API serves the result (COMPLETED, NO_GO, Critical persisted; Postgres row confirmed). No fake
 adapters (§XIII rule 27). 38/38 tests pass with services enabled.
+
+**2.11 result (Dockerfile engine):** `DockerfileScanner` (`packages/engines`) parses Dockerfile instructions
+(joining line continuations, tracking multi-stage `AS` names) and flags CIS-aligned misconfigurations —
+unpinned base image, root user, remote-script-piped-to-shell, remote `ADD`, hardcoded secret in `ENV/ARG`
+(redacted), `apt` without cleanup, missing `HEALTHCHECK` — feeding the `CloudIaCPosture` dimension. Isolated
+fixture `fixtures/insecure-docker`; 2 tests assert all 7 rules fire, the dimension is scored, and the secret
+is captured-but-redacted. Terraform/K8s/Helm scanners plug in next behind the same interface.
 
 **2.7 result (web UI):** `apps/web` is a Next.js 14 App-Router UI built as a thin BFF that proxies to the
 API (same-origin route handlers → no CORS, and it bundles no `@qa/*` packages, so no Node-only code reaches

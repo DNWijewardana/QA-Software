@@ -225,5 +225,6 @@ function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Security') return 'Security';
   if (f.category === 'Maintainability') return 'Maintainability';
   if (f.category === 'SupplyChain') return 'SupplyChainHealth';
+  if (f.category === 'CloudIaC') return 'CloudIaCPosture';
   return 'Functional';
 }

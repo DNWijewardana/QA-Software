@@ -24,6 +24,23 @@ Seeded defects (each maps to a rule the platform must detect):
 The dogfooding test `tests/dogfood.test.ts` scans this fixture and asserts the seeded defects are found,
 the output validates against the canonical contract, and **no raw secret value leaks into any evidence file**.
 
+## `insecure-docker/`
+
+An intentionally-insecure `Dockerfile` for the `DockerfileScanner` (spec V.18, CIS Docker Benchmark):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Unpinned base image (`node:latest`) | `IAC-DOCKER-TAG-001` | Medium |
+| Container runs as root (no `USER`) | `IAC-DOCKER-USER-001` | High |
+| Remote script piped to shell (`curl … \| sh`) | `IAC-DOCKER-CURLBASH-001` | High |
+| `ADD` fetches a remote URL | `IAC-DOCKER-ADD-001` | Medium |
+| Hardcoded secret in `ENV` | `IAC-DOCKER-SECRET-001` | High |
+| `apt install` without cache cleanup | `IAC-DOCKER-APTCLEAN-001` | Low |
+| No `HEALTHCHECK` | `IAC-DOCKER-HEALTHCHECK-000` | Informational |
+
+`tests/dockerfile.test.ts` asserts each rule fires, the `CloudIaCPosture` dimension is scored, and the
+seeded secret never leaks into evidence (it is captured but redacted).
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

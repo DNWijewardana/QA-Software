@@ -87,6 +87,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.17 | Static SEO analyzer (§V.24 — reported separately from software quality) | ✅ |
 | 2.18 | Logging-quality engine (§V.25 — sensitive-data-in-logs → Observability dim) | ✅ |
 | 2.19 | Error-handling engine (§V.14 — swallowed errors, exposed stack traces → Reliability dim) | ✅ |
+| 2.20 | Privacy / PII-discovery engine (§V.16 — Luhn-validated cards, SSN, email → Privacy dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -111,6 +112,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.20 result (privacy engine):** `PrivacyScanner` discovers hardcoded PII in source — credit-card numbers
+(Luhn-validated to avoid false positives, `PRIV-PII-CARD-001`, High, CWE-312), US SSNs in valid ranges
+(`PRIV-PII-SSN-001`, CWE-359), and personal emails excluding placeholder domains (`PRIV-PII-EMAIL-001`) —
+feeding the Privacy dimension. Every detected PII value is REDACTED before it reaches evidence (§VIII.10),
+verified by a no-leak test. Isolated fixture `fixtures/pii-in-source`; 3 tests including a false-positive
+guard (a Luhn-invalid number + a placeholder email produce nothing).
 
 **2.19 result (error-handling engine):** `ErrorHandlingScanner` statically analyses JS/TS and flags empty
 catch blocks (`ERR-EMPTY-CATCH-001`), catch blocks that only console-log (`ERR-CATCH-CONSOLE-001`), error/

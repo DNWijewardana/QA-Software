@@ -164,6 +164,20 @@ A JS file with poor error handling for the `ErrorHandlingScanner` (spec V.14):
 `tests/error-handling.test.ts` asserts each rule fires, the Reliability dimension is scored, and robust
 error handling (real recovery / rethrow, generic client errors) yields no findings.
 
+## `pii-in-source/`
+
+A JS file with hardcoded PII for the `PrivacyScanner` (spec V.16). All values are fabricated / well-known
+test values, and the scanner **redacts every PII value** before it reaches evidence.
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Luhn-valid credit-card number | `PRIV-PII-CARD-001` | High (CWE-312) |
+| Social Security Number | `PRIV-PII-SSN-001` | Medium (CWE-359) |
+| Personal email address | `PRIV-PII-EMAIL-001` | Informational |
+
+`tests/privacy.test.ts` asserts each rule fires, the Privacy dimension is scored, **no raw PII reaches
+evidence**, and that a Luhn-invalid number + a placeholder email produce no false positives.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

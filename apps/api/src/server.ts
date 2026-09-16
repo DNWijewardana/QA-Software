@@ -202,6 +202,9 @@ export function createApiServer(config: ApiConfig): ApiHandle {
           case 'cyclonedx':
             if (!result.sbom) return json(res, 404, { error: 'no_sbom', message: 'scan produced no SBOM' });
             return send(res, 200, toCycloneDx(result.sbom, result.scan.id), 'application/json');
+          case 'compliance':
+            if (!result.compliance) return json(res, 404, { error: 'no_compliance', message: 'scan produced no compliance matrix' });
+            return json(res, 200, result.compliance);
           default:
             return json(res, 400, { error: 'bad_format', message: `unknown format '${format}'` });
         }

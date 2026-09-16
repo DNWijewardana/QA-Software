@@ -6,7 +6,7 @@ import { isTerminal, SEVERITY_ORDER } from '@/app/lib/types';
 import { DecisionBadge } from './Badges';
 import { FindingsTable } from './FindingsTable';
 
-const REPORT_FORMATS = ['human', 'json', 'sarif', 'junit', 'csv', 'cyclonedx'] as const;
+const REPORT_FORMATS = ['human', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance'] as const;
 
 export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSummary | null }) {
   const [record, setRecord] = useState<ScanSummary | null>(initial);

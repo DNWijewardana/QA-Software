@@ -100,6 +100,24 @@ export function renderHumanReport(r: ScanResult): string {
     p();
   }
 
+  // Compliance control-coverage matrix (§IV.3, §IX.1). Technical evidence only — not a certification.
+  if (r.compliance) {
+    const c = r.compliance;
+    p('## Compliance (control-coverage matrix)');
+    p(`> ${c.disclaimer}`);
+    p();
+    p(`- **Frameworks:** ${c.frameworks.join(', ')}`);
+    p(`- **Controls:** ${c.summary.assessed}/${c.summary.total} assessed · ${c.summary.satisfied} satisfied · ${c.summary.gaps} with gaps · ${c.summary.notAssessed} not assessed`);
+    p();
+    for (const ctrl of c.controls) {
+      const mark = ctrl.status === 'SATISFIED' ? '✓' : ctrl.status === 'GAPS' ? '✗' : '–';
+      p(`- ${mark} **${ctrl.framework} ${ctrl.controlId}** — ${ctrl.title}: **${ctrl.status}**`);
+      if (ctrl.gapFindings.length) p(`  - gaps: ${ctrl.gapFindings.join(', ')}`);
+      else p(`  - ${ctrl.note}`);
+    }
+    p();
+  }
+
   // Manual review queue (§IX.5) — subjective items honestly separated.
   if (r.manualReviewQueue.length) {
     p('## Manual Review Required (human judgment)');

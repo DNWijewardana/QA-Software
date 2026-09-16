@@ -128,6 +128,29 @@ export const SbomSchema = z.object({
   notes: z.array(z.string()),
 });
 
+export const ComplianceMatrixSchema = z.object({
+  disclaimer: z.string(),
+  frameworks: z.array(z.string()),
+  controls: z.array(
+    z.object({
+      framework: z.string(),
+      controlId: z.string(),
+      title: z.string(),
+      status: z.enum(['SATISFIED', 'GAPS', 'NOT_ASSESSED']),
+      mappedRules: z.array(z.string()),
+      gapFindings: z.array(z.string()),
+      note: z.string(),
+    }),
+  ),
+  summary: z.object({
+    total: z.number().int(),
+    assessed: z.number().int(),
+    satisfied: z.number().int(),
+    gaps: z.number().int(),
+    notAssessed: z.number().int(),
+  }),
+});
+
 export const ManifestSchema = z.object({
   scanId: z.string(),
   projectVersion: z.string().optional(),
@@ -190,6 +213,7 @@ export const ScanResultSchema = z.object({
   manualReviewQueue: z.array(z.object({ item: z.string(), reason: z.string() })),
   limitations: z.array(z.string()),
   sbom: SbomSchema.optional(),
+  compliance: ComplianceMatrixSchema.optional(),
 });
 
 export type ScanResultContract = z.infer<typeof ScanResultSchema>;

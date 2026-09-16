@@ -76,7 +76,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.5 | Async delivery core `packages/jobs` (`JobQueue`/`ScanStore`/`ScanService`) + `apps/worker` | ✅ (in-memory adapter; BullMQ/Postgres next) |
 | 2.6 | `apps/api` — submit/status/findings/report+export endpoints, path-safety guard | ✅ (node:http; NestJS migration deferred — see doc 02) |
 | 2.7 | `apps/web` (Next.js) — submit → live status → findings → report/exports (WCAG 2.2 AA) | ✅ |
-| 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ☐ |
+| 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
 | 2.12 | Kubernetes manifest security engine (CIS K8s / Pod Security Standards → `CloudIaCPosture`) | ✅ |
@@ -95,6 +95,15 @@ adapter's real SQL is tested via pg-mem (4 tests), the BullMQ adapter via a Redi
 and the full **multi-process** path end-to-end — API (producer) → Redis → **separate worker process** →
 Postgres → API serves the result (COMPLETED, NO_GO, Critical persisted; Postgres row confirmed). No fake
 adapters (§XIII rule 27). 38/38 tests pass with services enabled.
+
+**2.8 result (compliance mapping):** `mapCompliance` (`packages/core`) maps findings to a control-coverage
+matrix (§IV.3) across SOC 2 (illustrative), OWASP Top 10 2025, CIS Docker, and CIS Kubernetes. Each control:
+mapped rules → evidence (finding IDs) → status. Statuses are honest — `SATISFIED` = the check ran and found no
+violation (NOT "compliant"); `GAPS` = mapped violations exist (with finding IDs); `NOT_ASSESSED` = the
+providing check did not run (never silently satisfied). A prominent disclaimer states this is technical
+evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
+`compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
+section. 3 tests (unit statuses + end-to-end matrix).
 
 **2.12 result (Kubernetes engine):** `KubernetesScanner` parses multi-document YAML (via the `yaml`
 package), extracts the pod spec from Pod/Deployment/StatefulSet/DaemonSet/ReplicaSet/Job/CronJob, and

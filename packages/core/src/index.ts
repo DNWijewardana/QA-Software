@@ -10,3 +10,4 @@ export * from './types.js';
 export * from './invariants.js';
 export * from './scoring.js';
 export * from './redaction.js';
+export * from './compliance.js';

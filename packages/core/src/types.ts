@@ -15,6 +15,7 @@ import type {
   Severity,
   Status,
 } from './vocabularies.js';
+import type { ComplianceMatrix } from './compliance.js';
 
 /** A reference to a stored evidence artifact (blob lives in object storage — §04 doc). */
 export interface EvidenceRef {
@@ -225,4 +226,6 @@ export interface ScanResult {
   limitations: string[];
   /** Optional SBOM, present when a dependency/supply-chain engine ran (§V.17). */
   sbom?: Sbom;
+  /** Optional compliance control-coverage matrix (§IV.3). Technical evidence only — not a certification. */
+  compliance?: ComplianceMatrix;
 }

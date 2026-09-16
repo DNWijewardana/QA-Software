@@ -17,6 +17,7 @@ import {
   computeDimensionScore,
   computeOverall,
   decideRelease,
+  mapCompliance,
   type Assumption,
   type DimensionScore,
   type ExecutionManifest,
@@ -126,6 +127,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   const allFindings: Finding[] = [];
   const allArtifacts: EngineArtifact[] = [];
   const engineVersions: Record<string, string> = {};
+  const ranEngines = new Set<string>();
   let sbom: Sbom | undefined;
   // Group coverage per dimension.
   const dimAgg = new Map<QualityDimension, { applicable: number; executed: number }>();
@@ -133,6 +135,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   for (const engine of engines) {
     engineVersions[engine.name] = engine.version;
     if (!engine.appliesTo(ctx)) continue;
+    ranEngines.add(engine.name);
     const result = await engine.run(ctx);
     allFindings.push(...result.findings);
     allArtifacts.push(...result.artifacts);
@@ -161,6 +164,10 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
       }),
     );
   }
+
+  // Compliance mapping (§IV.3): map findings → control-coverage matrix + a ComplianceReadiness score.
+  const { matrix: compliance, score: complianceScore } = mapCompliance(allFindings, ranEngines);
+  scores.push(complianceScore);
 
   const overall = computeOverall(scores, allFindings);
   const releaseDecision = decideRelease(overall, allFindings);
@@ -212,6 +219,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
         : []),
     ],
     ...(sbom ? { sbom } : {}),
+    compliance,
   };
 
   // Validate against the canonical contract before returning (§X.4 — catch drift; fail loud).

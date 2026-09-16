@@ -137,6 +137,19 @@ quality — these findings never affect the quality dimensions, overall score, o
 `tests/seo.test.ts` asserts each rule fires **and** that SEO findings stay out of the scored findings and
 dimensions (the V.24 separation requirement).
 
+## `insecure-logging/`
+
+A JS file with leaky logging for the `LoggingScanner` (spec V.25):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Sensitive value written to logs (password, token) | `OBS-LOG-SENSITIVE-001` | High (CWE-532) |
+| Logging a whole request/user object | `OBS-LOG-PII-OBJECT-001` | Medium |
+| `console.*` instead of structured logging | `OBS-LOG-CONSOLE-001` | Low |
+
+`tests/logging.test.ts` asserts each rule fires, the Observability dimension is scored, the SOC 2 CC7.2
+("no sensitive data in logs") compliance control shows a gap, and clean structured logging yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

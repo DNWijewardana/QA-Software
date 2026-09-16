@@ -14,6 +14,7 @@ export * from './openapi-scanner.js';
 export * from './html-a11y-scanner.js';
 export * from './performance-scanner.js';
 export * from './seo-scanner.js';
+export * from './logging-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -25,6 +26,7 @@ import { ComposeScanner } from './compose-scanner.js';
 import { OpenApiScanner } from './openapi-scanner.js';
 import { HtmlAccessibilityScanner } from './html-a11y-scanner.js';
 import { PerformanceScanner } from './performance-scanner.js';
+import { LoggingScanner } from './logging-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -38,5 +40,6 @@ export function defaultStaticEngines(): Engine[] {
     new OpenApiScanner(),
     new HtmlAccessibilityScanner(),
     new PerformanceScanner(),
+    new LoggingScanner(),
   ];
 }

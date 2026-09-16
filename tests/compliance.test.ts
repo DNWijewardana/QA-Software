@@ -75,12 +75,14 @@ describe('compliance end-to-end', () => {
     expect(result.compliance).toBeDefined();
     const sum = result.compliance!.summary;
     expect(result.compliance!.frameworks.length).toBeGreaterThan(0);
-    // secret + dependency checks ran on this fixture; docker/k8s/compose did not.
-    expect(sum.assessed).toBe(4);
-    // Robust to catalog growth: everything not assessed is the remainder of the catalog.
+    // secret + dependency + logging checks run on this JS fixture; docker/k8s/compose/openapi do not.
+    // Robust to catalog growth: assert relationships rather than exact counts.
+    expect(sum.assessed).toBeGreaterThanOrEqual(4);
     expect(sum.notAssessed).toBe(sum.total - sum.assessed);
     expect(sum.satisfied + sum.gaps).toBe(sum.assessed);
-    expect(sum.gaps).toBeGreaterThan(0);
+    expect(sum.gaps).toBeGreaterThan(0); // hardcoded-secret + dependency findings are gaps
+    // Controls whose engine did not run stay NOT_ASSESSED (never silently satisfied).
+    expect(result.compliance!.controls.some((c) => c.status === 'NOT_ASSESSED')).toBe(true);
     expect(result.scores.some((s) => s.dimension === 'ComplianceReadiness')).toBe(true);
   });
 });

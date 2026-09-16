@@ -85,6 +85,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.15 | Static HTML accessibility engine (WCAG 2.2 → Accessibility dim) | ✅ |
 | 2.16 | Static performance/asset-budget engine (§V.12 → Performance dim) | ✅ |
 | 2.17 | Static SEO analyzer (§V.24 — reported separately from software quality) | ✅ |
+| 2.18 | Logging-quality engine (§V.25 — sensitive-data-in-logs → Observability dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -109,6 +110,14 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.18 result (logging engine):** `LoggingScanner` does line-based analysis of log calls in JS/TS and flags
+sensitive data written to logs (`OBS-LOG-SENSITIVE-001`, High, CWE-532), wholesale request/user-object
+logging (`OBS-LOG-PII-OBJECT-001`), and `console.*` instead of structured logging (`OBS-LOG-CONSOLE-001`),
+feeding the Observability dimension. Mapped into the compliance catalog as SOC 2 (illustrative) CC7.2. Honest
+scope: logging quality only — full observability (metrics/traces/alerting coverage, SLIs) needs runtime/config
+inspection. Isolated fixture `fixtures/insecure-logging`; 2 tests. The compliance integration assertion was
+relaxed to relationships (assessed ≥ 4) to stay robust as engine-backed controls grow.
 
 **2.17 result (SEO analyzer):** `analyzeSeo` runs static on-page + project SEO checks (title, meta
 description, canonical, robots/noindex, headings, Open Graph, viewport, robots.txt, sitemap.xml). Per §V.24

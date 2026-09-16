@@ -50,6 +50,7 @@ export const CONTROL_CATALOG: CatalogControl[] = [
   // --- Secrets management ---
   { framework: 'SOC 2 (illustrative)', controlId: 'CC6.1', title: 'Secrets are not hardcoded in source', rules: ['SEC-SECRET-001'], providedByEngine: 'secret-scanner' },
   { framework: 'OWASP Top 10 2025', controlId: 'A05', title: 'Security misconfiguration — no hardcoded secrets', rules: ['SEC-SECRET-001'], providedByEngine: 'secret-scanner' },
+  { framework: 'SOC 2 (illustrative)', controlId: 'CC7.2', title: 'No sensitive data written to logs', rules: ['OBS-LOG-SENSITIVE-001', 'OBS-LOG-PII-OBJECT-001'], providedByEngine: 'logging-scanner' },
   // --- Supply chain / vulnerable components ---
   { framework: 'SOC 2 (illustrative)', controlId: 'CC7.1', title: 'Dependency hygiene (lockfile, pinned versions)', rules: ['SUP-LOCK-001', 'SUP-PIN-001'], providedByEngine: 'dependency-scanner' },
   { framework: 'OWASP Top 10 2025', controlId: 'A06', title: 'Vulnerable & outdated components', rules: ['SUP-LOCK-001', 'SUP-PIN-001'], providedByEngine: 'dependency-scanner' },

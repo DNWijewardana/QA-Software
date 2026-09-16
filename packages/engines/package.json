@@ -7,7 +7,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@qa/core": "*"
+    "@qa/core": "*",
+    "yaml": "^2.6.1"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

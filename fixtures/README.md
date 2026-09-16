@@ -41,6 +41,28 @@ An intentionally-insecure `Dockerfile` for the `DockerfileScanner` (spec V.18, C
 `tests/dockerfile.test.ts` asserts each rule fires, the `CloudIaCPosture` dimension is scored, and the
 seeded secret never leaks into evidence (it is captured but redacted).
 
+## `insecure-k8s/`
+
+An intentionally-insecure Kubernetes `Deployment` for the `KubernetesScanner` (spec V.18, CIS Kubernetes
+Benchmark / Pod Security Standards):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| `hostNetwork: true` | `IAC-K8S-HOSTNS-001` | High |
+| `hostPath` volume | `IAC-K8S-HOSTPATH-001` | Medium |
+| SA token auto-mounted | `IAC-K8S-SATOKEN-001` | Low |
+| `privileged: true` | `IAC-K8S-PRIV-001` | Critical |
+| `allowPrivilegeEscalation` not false | `IAC-K8S-PRIVESC-001` | Medium |
+| Runs as root (no runAsNonRoot) | `IAC-K8S-ROOT-001` | High |
+| Dangerous capability (`SYS_ADMIN`) | `IAC-K8S-CAP-001` | High |
+| Writable root filesystem | `IAC-K8S-ROFS-001` | Low |
+| Missing CPU/memory limits | `IAC-K8S-LIMITS-001` | Medium |
+| Unpinned image (`nginx:latest`) | `IAC-K8S-IMGTAG-001` | Medium |
+| Missing liveness/readiness probes | `IAC-K8S-PROBES-000` | Informational |
+
+`tests/kubernetes.test.ts` asserts each rule fires, the privileged container forces `NO_GO`, the
+`CloudIaCPosture` dimension is scored, and non-workload YAML (e.g. a CI workflow) is NOT flagged.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

@@ -79,6 +79,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ☐ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
+| 2.12 | Kubernetes manifest security engine (CIS K8s / Pod Security Standards → `CloudIaCPosture`) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -94,6 +95,14 @@ adapter's real SQL is tested via pg-mem (4 tests), the BullMQ adapter via a Redi
 and the full **multi-process** path end-to-end — API (producer) → Redis → **separate worker process** →
 Postgres → API serves the result (COMPLETED, NO_GO, Critical persisted; Postgres row confirmed). No fake
 adapters (§XIII rule 27). 38/38 tests pass with services enabled.
+
+**2.12 result (Kubernetes engine):** `KubernetesScanner` parses multi-document YAML (via the `yaml`
+package), extracts the pod spec from Pod/Deployment/StatefulSet/DaemonSet/ReplicaSet/Job/CronJob, and
+evaluates it against 11 CIS Kubernetes / Pod Security Standards checks — privileged (Critical), root user,
+host namespaces, hostPath, dangerous capabilities, privilege-escalation, writable root FS, missing
+resource limits, unpinned image, SA-token automount, missing probes. Non-workload YAML (no kind/apiVersion)
+is ignored, so CI workflows etc. are never flagged. Isolated fixture `fixtures/insecure-k8s`; 2 tests assert
+all rules fire, the privileged container forces NO_GO, and plain YAML is not flagged.
 
 **2.11 result (Dockerfile engine):** `DockerfileScanner` (`packages/engines`) parses Dockerfile instructions
 (joining line continuations, tracking multi-stage `AS` names) and flags CIS-aligned misconfigurations —

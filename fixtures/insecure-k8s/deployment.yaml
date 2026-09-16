@@ -1,0 +1,37 @@
+# FIXTURE — intentionally insecure Kubernetes manifest for the golden corpus (spec X.3). NOT for real use.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure
+  template:
+    metadata:
+      labels:
+        app: insecure
+    spec:
+      # SEEDED: shares host network namespace (IAC-K8S-HOSTNS-001)
+      hostNetwork: true
+      volumes:
+        # SEEDED: hostPath volume exposes the node filesystem (IAC-K8S-HOSTPATH-001)
+        - name: host-root
+          hostPath:
+            path: /
+      containers:
+        - name: app
+          # SEEDED: unpinned image (IAC-K8S-IMGTAG-001)
+          image: nginx:latest
+          # SEEDED: no resources.limits (IAC-K8S-LIMITS-001); no probes (IAC-K8S-PROBES-000);
+          #         no automountServiceAccountToken:false (IAC-K8S-SATOKEN-001)
+          securityContext:
+            # SEEDED: privileged (IAC-K8S-PRIV-001, Critical); runs as root (IAC-K8S-ROOT-001);
+            #         allowPrivilegeEscalation not false (IAC-K8S-PRIVESC-001);
+            #         readOnlyRootFilesystem not true (IAC-K8S-ROFS-001)
+            privileged: true
+            capabilities:
+              add:
+                # SEEDED: dangerous capability (IAC-K8S-CAP-001)
+                - SYS_ADMIN

@@ -8,14 +8,22 @@ export * from './secret-scanner.js';
 export * from './code-quality.js';
 export * from './dependency-scanner.js';
 export * from './dockerfile-scanner.js';
+export * from './kubernetes-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
 import { CodeQualityAnalyzer } from './code-quality.js';
 import { DependencyScanner } from './dependency-scanner.js';
 import { DockerfileScanner } from './dockerfile-scanner.js';
+import { KubernetesScanner } from './kubernetes-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
-  return [new SecretScanner(), new CodeQualityAnalyzer(), new DependencyScanner(), new DockerfileScanner()];
+  return [
+    new SecretScanner(),
+    new CodeQualityAnalyzer(),
+    new DependencyScanner(),
+    new DockerfileScanner(),
+    new KubernetesScanner(),
+  ];
 }

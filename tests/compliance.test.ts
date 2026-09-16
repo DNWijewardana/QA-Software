@@ -73,11 +73,14 @@ describe('compliance end-to-end', () => {
     const result = await runScan({ projectDir: fixture, scanId: 'scan_comp', evidenceDir: path.join(tmp, 'ev') });
 
     expect(result.compliance).toBeDefined();
+    const sum = result.compliance!.summary;
     expect(result.compliance!.frameworks.length).toBeGreaterThan(0);
-    // secret + dependency checks ran on this fixture; docker/k8s did not.
-    expect(result.compliance!.summary.assessed).toBe(4);
-    expect(result.compliance!.summary.notAssessed).toBe(7);
-    expect(result.compliance!.summary.gaps).toBeGreaterThan(0);
+    // secret + dependency checks ran on this fixture; docker/k8s/compose did not.
+    expect(sum.assessed).toBe(4);
+    // Robust to catalog growth: everything not assessed is the remainder of the catalog.
+    expect(sum.notAssessed).toBe(sum.total - sum.assessed);
+    expect(sum.satisfied + sum.gaps).toBe(sum.assessed);
+    expect(sum.gaps).toBeGreaterThan(0);
     expect(result.scores.some((s) => s.dimension === 'ComplianceReadiness')).toBe(true);
   });
 });

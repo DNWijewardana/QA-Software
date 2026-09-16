@@ -1,0 +1,22 @@
+# FIXTURE — intentionally insecure docker-compose file for the golden corpus (spec X.3). NOT for real use.
+version: "3.8"
+services:
+  app:
+    # SEEDED: unpinned image (IAC-COMPOSE-IMGTAG-001)
+    image: nginx:latest
+    # SEEDED: privileged service (IAC-COMPOSE-PRIV-001, Critical)
+    privileged: true
+    # SEEDED: host network mode (IAC-COMPOSE-HOSTNET-001)
+    network_mode: host
+    volumes:
+      # SEEDED: Docker socket mount = container escape (IAC-COMPOSE-DOCKERSOCK-001, Critical)
+      - /var/run/docker.sock:/var/run/docker.sock
+      # SEEDED: sensitive host path bind mount (IAC-COMPOSE-HOSTMOUNT-001)
+      - /etc:/host-etc:ro
+    # SEEDED: dangerous capability (IAC-COMPOSE-CAP-001)
+    cap_add:
+      - SYS_ADMIN
+    # SEEDED: hardcoded secret in environment (IAC-COMPOSE-SECRET-001)
+    environment:
+      DB_PASSWORD: supersecret123
+    # SEEDED: no security_opt no-new-privileges (IAC-COMPOSE-NNP-001)

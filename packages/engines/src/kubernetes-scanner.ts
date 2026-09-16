@@ -11,7 +11,7 @@ import { parseAllDocuments } from 'yaml';
 import type { Finding } from '@qa/core';
 import { redact } from '@qa/core';
 import type { Engine, EngineArtifact, EngineResult, ProjectFile, ScanContext } from './types.js';
-import { findingId, sha256 } from './util.js';
+import { findingId, imageUnpinned, sha256 } from './util.js';
 
 const CHECK_CATEGORIES = 11;
 const DANGEROUS_CAPS = new Set(['ALL', 'SYS_ADMIN', 'NET_ADMIN', 'SYS_PTRACE', 'SYS_MODULE', 'NET_RAW', 'SYS_TIME']);
@@ -46,14 +46,6 @@ function extractWorkload(doc: unknown): Workload | null {
   else podSpec = rec(rec(spec.template).spec);
   if (arr(podSpec.containers).length === 0) return null;
   return { kind, name, podSpec };
-}
-
-function imageUnpinned(image: string): 'latest' | 'untagged' | null {
-  const nameTag = image.slice(image.lastIndexOf('/') + 1);
-  if (nameTag.includes('@')) return null; // digest-pinned
-  const colon = nameTag.indexOf(':');
-  if (colon === -1) return 'untagged';
-  return nameTag.slice(colon + 1) === 'latest' ? 'latest' : null;
 }
 
 function runsAsNonRoot(sc: Record<string, unknown>, podSC: Record<string, unknown>): boolean {

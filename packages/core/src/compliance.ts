@@ -57,6 +57,7 @@ export const CONTROL_CATALOG: CatalogControl[] = [
   { framework: 'CIS Docker Benchmark', controlId: '4.1', title: 'Container runs as a non-root user', rules: ['IAC-DOCKER-USER-001'], providedByEngine: 'dockerfile-scanner' },
   { framework: 'CIS Docker Benchmark', controlId: '4.6', title: 'Image defines a HEALTHCHECK', rules: ['IAC-DOCKER-HEALTHCHECK-000'], providedByEngine: 'dockerfile-scanner' },
   { framework: 'CIS Docker Benchmark', controlId: '4.10', title: 'No secrets baked into the image', rules: ['IAC-DOCKER-SECRET-001'], providedByEngine: 'dockerfile-scanner' },
+  { framework: 'CIS Docker Benchmark', controlId: '5.31', title: 'Docker socket not mounted into containers', rules: ['IAC-COMPOSE-DOCKERSOCK-001'], providedByEngine: 'compose-scanner' },
   // --- Kubernetes workloads (CIS K8s / Pod Security Standards) ---
   { framework: 'CIS Kubernetes Benchmark', controlId: '5.2.1', title: 'No privileged containers', rules: ['IAC-K8S-PRIV-001'], providedByEngine: 'kubernetes-scanner' },
   { framework: 'CIS Kubernetes Benchmark', controlId: '5.2.6', title: 'Containers run as non-root', rules: ['IAC-K8S-ROOT-001'], providedByEngine: 'kubernetes-scanner' },

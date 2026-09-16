@@ -80,6 +80,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
 | 2.12 | Kubernetes manifest security engine (CIS K8s / Pod Security Standards → `CloudIaCPosture`) | ✅ |
+| 2.13 | docker-compose security engine (CIS Docker → `CloudIaCPosture`; Docker-socket → compliance) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -104,6 +105,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.13 result (docker-compose engine):** `ComposeScanner` parses compose files and flags 8 CIS-aligned
+service risks — privileged, **Docker socket mount** (container escape), host network mode, sensitive host
+bind mounts, dangerous capabilities, unpinned image, hardcoded env secret (redacted), missing
+`no-new-privileges`. Shared `imageUnpinned` helper lifted into `util.ts` (K8s refactored to reuse it). The
+Docker-socket rule is mapped into the compliance catalog as CIS Docker 5.31. Isolated fixture
+`fixtures/insecure-compose`; 2 tests. The compliance integration test was made robust to catalog growth.
 
 **2.12 result (Kubernetes engine):** `KubernetesScanner` parses multi-document YAML (via the `yaml`
 package), extracts the pod spec from Pod/Deployment/StatefulSet/DaemonSet/ReplicaSet/Job/CronJob, and

@@ -63,6 +63,24 @@ Benchmark / Pod Security Standards):
 `tests/kubernetes.test.ts` asserts each rule fires, the privileged container forces `NO_GO`, the
 `CloudIaCPosture` dimension is scored, and non-workload YAML (e.g. a CI workflow) is NOT flagged.
 
+## `insecure-compose/`
+
+An intentionally-insecure `docker-compose.yml` for the `ComposeScanner` (spec V.18, CIS Docker Benchmark):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Privileged service | `IAC-COMPOSE-PRIV-001` | Critical |
+| Docker socket mounted (container escape) | `IAC-COMPOSE-DOCKERSOCK-001` | Critical |
+| Sensitive host path bind mount (`/etc`) | `IAC-COMPOSE-HOSTMOUNT-001` | High |
+| Host network mode | `IAC-COMPOSE-HOSTNET-001` | High |
+| Dangerous capability (`SYS_ADMIN`) | `IAC-COMPOSE-CAP-001` | High |
+| Hardcoded secret in `environment` | `IAC-COMPOSE-SECRET-001` | High |
+| Unpinned image (`nginx:latest`) | `IAC-COMPOSE-IMGTAG-001` | Medium |
+| `no-new-privileges` not set | `IAC-COMPOSE-NNP-001` | Medium |
+
+`tests/compose.test.ts` asserts each rule fires, the privileged service + socket mount force `NO_GO`, the
+seeded secret is redacted, and the CIS Docker 5.31 (Docker-socket) compliance control shows a gap.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

@@ -205,6 +205,9 @@ export function createApiServer(config: ApiConfig): ApiHandle {
           case 'compliance':
             if (!result.compliance) return json(res, 404, { error: 'no_compliance', message: 'scan produced no compliance matrix' });
             return json(res, 200, result.compliance);
+          case 'seo':
+            if (!result.seo) return json(res, 404, { error: 'no_seo', message: 'scan analysed no HTML pages' });
+            return json(res, 200, result.seo);
           default:
             return json(res, 400, { error: 'bad_format', message: `unknown format '${format}'` });
         }

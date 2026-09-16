@@ -118,6 +118,25 @@ An intentionally-inaccessible HTML page for the `HtmlAccessibilityScanner` (spec
 dimension is scored, a **manual WCAG audit** is queued (automation cannot prove conformance — §V.5), and a
 clean page yields no findings.
 
+## `seo-issues/`
+
+An SEO-poor HTML page for the SEO analyzer (spec V.24). SEO is reported **separately** from software
+quality — these findings never affect the quality dimensions, overall score, or release decision.
+
+| Seeded defect | Expected rule |
+|---|---|
+| Missing `<title>` | `SEO-TITLE-001` |
+| Missing meta description | `SEO-META-DESC-001` |
+| Missing canonical link | `SEO-CANONICAL-001` |
+| `noindex` robots meta | `SEO-ROBOTS-NOINDEX-001` |
+| No `<h1>` (or multiple) | `SEO-H1-001` |
+| Incomplete Open Graph | `SEO-OG-001` |
+| Missing viewport meta | `SEO-VIEWPORT-001` |
+| No robots.txt / sitemap.xml | `SEO-ROBOTSTXT-001` / `SEO-SITEMAP-001` |
+
+`tests/seo.test.ts` asserts each rule fires **and** that SEO findings stay out of the scored findings and
+dimensions (the V.24 separation requirement).
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

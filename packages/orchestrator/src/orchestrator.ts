@@ -29,6 +29,7 @@ import {
 } from '@qa/core';
 import { validateScanResult } from '@qa/contracts';
 import {
+  analyzeSeo,
   defaultStaticEngines,
   profileProject,
   type Engine,
@@ -167,6 +168,11 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     );
   }
 
+  // SEO analysis (§V.24) — reported SEPARATELY; NOT merged into allFindings, so it never affects
+  // the quality dimensions, the overall score, or the release decision.
+  const seo = await analyzeSeo(ctx);
+  if (seo) assertFindings(seo.findings);
+
   // Compliance mapping (§IV.3): map findings → control-coverage matrix + a ComplianceReadiness score.
   const { matrix: compliance, score: complianceScore } = mapCompliance(allFindings, ranEngines);
   scores.push(complianceScore);
@@ -231,6 +237,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     ],
     ...(sbom ? { sbom } : {}),
     compliance,
+    ...(seo ? { seo } : {}),
   };
 
   // Validate against the canonical contract before returning (§X.4 — catch drift; fail loud).

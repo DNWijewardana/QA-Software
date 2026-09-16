@@ -84,6 +84,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.14 | OpenAPI spec quality/security engine (OWASP API Security Top 10 → Security dim) | ✅ |
 | 2.15 | Static HTML accessibility engine (WCAG 2.2 → Accessibility dim) | ✅ |
 | 2.16 | Static performance/asset-budget engine (§V.12 → Performance dim) | ✅ |
+| 2.17 | Static SEO analyzer (§V.24 — reported separately from software quality) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -108,6 +109,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.17 result (SEO analyzer):** `analyzeSeo` runs static on-page + project SEO checks (title, meta
+description, canonical, robots/noindex, headings, Open Graph, viewport, robots.txt, sitemap.xml). Per §V.24
+it is deliberately NOT a scoring engine: the orchestrator calls it directly and places the result in
+`scan.seo`, keeping SEO findings OUT of `findings[]`, the quality dimensions, the overall score, and the
+release decision (verified by a dedicated separation test). Exposed via a `?format=seo` API/web export and a
+report section. Isolated fixture `fixtures/seo-issues`; 2 tests.
 
 **2.16 result (performance engine):** `PerformanceScanner` runs static budget checks (no build/page load,
 using file sizes): oversized images/fonts/media, over-budget shipped JS/CSS, render-blocking `<script>` in

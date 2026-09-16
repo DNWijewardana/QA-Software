@@ -118,6 +118,19 @@ export function renderHumanReport(r: ScanResult): string {
     p();
   }
 
+  // SEO — reported SEPARATELY from software quality (§V.24).
+  if (r.seo) {
+    p('## SEO (reported separately from software quality)');
+    p(`> ${r.seo.note}`);
+    p();
+    p(`- **Pages analyzed:** ${r.seo.summary.pages}  ·  **Issues:** ${r.seo.summary.issues}`);
+    for (const f of r.seo.findings) {
+      const loc = f.location.file ?? '(project)';
+      p(`- **[${f.severity}] ${f.title}** (${f.ruleId}) — ${loc}`);
+    }
+    p();
+  }
+
   // Manual review queue (§IX.5) — subjective items honestly separated.
   if (r.manualReviewQueue.length) {
     p('## Manual Review Required (human judgment)');

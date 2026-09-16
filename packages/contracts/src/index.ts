@@ -214,6 +214,13 @@ export const ScanResultSchema = z.object({
   limitations: z.array(z.string()),
   sbom: SbomSchema.optional(),
   compliance: ComplianceMatrixSchema.optional(),
+  seo: z
+    .object({
+      note: z.string(),
+      findings: z.array(FindingSchema),
+      summary: z.object({ pages: z.number().int(), issues: z.number().int() }),
+    })
+    .optional(),
 });
 
 export type ScanResultContract = z.infer<typeof ScanResultSchema>;

@@ -204,6 +204,16 @@ export interface Sbom {
   notes: string[];
 }
 
+/**
+ * SEO report (§V.24). Reported SEPARATELY from software quality — SEO findings do NOT feed the quality
+ * dimensions, the overall score, or the release decision.
+ */
+export interface SeoReport {
+  note: string;
+  findings: Finding[];
+  summary: { pages: number; issues: number };
+}
+
 /** The full canonical scan result — mirrors §IX.4 exactly (sbom is a §2.0 extension field). */
 export interface ScanResult {
   schemaVersion: '2.0';
@@ -228,4 +238,6 @@ export interface ScanResult {
   sbom?: Sbom;
   /** Optional compliance control-coverage matrix (§IV.3). Technical evidence only — not a certification. */
   compliance?: ComplianceMatrix;
+  /** Optional SEO report (§V.24). Separate from software quality; does not affect scores or the release decision. */
+  seo?: SeoReport;
 }

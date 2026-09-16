@@ -13,6 +13,7 @@ export * from './compose-scanner.js';
 export * from './openapi-scanner.js';
 export * from './html-a11y-scanner.js';
 export * from './performance-scanner.js';
+export * from './seo-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';

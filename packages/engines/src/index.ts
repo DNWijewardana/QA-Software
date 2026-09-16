@@ -12,6 +12,7 @@ export * from './kubernetes-scanner.js';
 export * from './compose-scanner.js';
 export * from './openapi-scanner.js';
 export * from './html-a11y-scanner.js';
+export * from './performance-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -22,6 +23,7 @@ import { KubernetesScanner } from './kubernetes-scanner.js';
 import { ComposeScanner } from './compose-scanner.js';
 import { OpenApiScanner } from './openapi-scanner.js';
 import { HtmlAccessibilityScanner } from './html-a11y-scanner.js';
+import { PerformanceScanner } from './performance-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -34,5 +36,6 @@ export function defaultStaticEngines(): Engine[] {
     new ComposeScanner(),
     new OpenApiScanner(),
     new HtmlAccessibilityScanner(),
+    new PerformanceScanner(),
   ];
 }

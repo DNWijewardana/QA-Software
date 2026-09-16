@@ -83,6 +83,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.13 | docker-compose security engine (CIS Docker → `CloudIaCPosture`; Docker-socket → compliance) | ✅ |
 | 2.14 | OpenAPI spec quality/security engine (OWASP API Security Top 10 → Security dim) | ✅ |
 | 2.15 | Static HTML accessibility engine (WCAG 2.2 → Accessibility dim) | ✅ |
+| 2.16 | Static performance/asset-budget engine (§V.12 → Performance dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -107,6 +108,14 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.16 result (performance engine):** `PerformanceScanner` runs static budget checks (no build/page load,
+using file sizes): oversized images/fonts/media, over-budget shipped JS/CSS, render-blocking `<script>` in
+`<head>` (async/defer/module exempt), and committed source maps — feeding the Performance dimension (default
+weight 0.1). It only applies to web-relevant files (assets/CSS/HTML/maps and asset-path or `.min`/`.bundle`
+JS), so plain Node source is untouched (no impact on existing scans). Honestly scoped: static budgets only,
+NOT a substitute for runtime latency/Core-Web-Vitals testing (which needs an authorized dynamic target). The
+test builds oversized files at runtime (nothing large committed); 2 tests (budgets + no false positives).
 
 **2.15 result (accessibility engine):** `HtmlAccessibilityScanner` parses HTML (via `node-html-parser`) and
 runs 9 static WCAG 2.2 checks — missing image alt, no document lang, no title, unlabeled form controls,

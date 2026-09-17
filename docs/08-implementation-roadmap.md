@@ -98,6 +98,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.28 | Terraform IaC/CSPM engine (§V.18 — public buckets/IAM/SG/encryption → CloudIaCPosture) | ✅ |
 | 2.29 | CloudFormation IaC/CSPM engine (§V.18 — same CSPM checks over CFN templates) | ✅ |
 | 2.30 | License/legal-checks engine (§V.30 — declared license metadata → SupplyChainHealth) | ✅ |
+| 2.31 | Python security engine (§V.7 — eval/pickle/shell/yaml.load → Security dim; broadens beyond JS/TS) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -144,6 +145,13 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.31 result (Python engine):** `PythonScanner` broadens coverage beyond JS/TS. With quote-aware Python
+comment-stripping (so patterns in comments don't false-positive), it flags `eval`/`exec` (CWE-95),
+`os.system` and `shell=True` (CWE-78), `pickle.load(s)` (CWE-502), unsafe `yaml.load()` without a Loader
+(CWE-20), Flask `debug=True` (CWE-489), and MD5/SHA-1 (CWE-327) — feeding the Security dimension. Word
+boundaries prevent false positives (e.g. `ast.literal_eval` is not flagged). Isolated fixture
+`fixtures/insecure-python`; 2 tests including a safe-Python no-false-positive check.
 
 **2.30 result (license engine):** `LicenseScanner` inspects declared license metadata in package.json files
 (§V.30) and reports FACTS only — no license field (`LIC-MISSING-001`), deprecated object/array form or a

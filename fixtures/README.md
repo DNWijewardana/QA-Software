@@ -258,6 +258,24 @@ An intentionally-insecure CloudFormation JSON template for the `CloudFormationSc
 `tests/cloudformation.test.ts` asserts each rule fires, the secret never reaches evidence, and a secure
 template + a non-CloudFormation JSON yield no findings.
 
+## `insecure-python/`
+
+Intentionally-insecure Python for the `PythonScanner` (spec V.7). Includes a comment mentioning `eval(` that
+must NOT be flagged (comment-stripping test).
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| `eval()` / `exec()` | `PY-EVAL-001` | High (CWE-95) |
+| `os.system()` | `PY-OS-SYSTEM-001` | High (CWE-78) |
+| `subprocess(..., shell=True)` | `PY-SUBPROCESS-SHELL-001` | High (CWE-78) |
+| `pickle.load(s)` | `PY-PICKLE-001` | High (CWE-502) |
+| `yaml.load()` without a safe Loader | `PY-YAML-LOAD-001` | High (CWE-20) |
+| Flask `debug=True` | `PY-FLASK-DEBUG-001` | Medium (CWE-489) |
+| `hashlib.md5/sha1` | `PY-WEAK-HASH-001` | Low (CWE-327) |
+
+`tests/python.test.ts` asserts each rule fires, the commented `eval(` is not flagged, and safe Python
+(`ast.literal_eval`, `shell=False`, `yaml.safe_load`, `sha256`) yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

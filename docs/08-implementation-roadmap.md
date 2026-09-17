@@ -100,6 +100,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.30 | License/legal-checks engine (§V.30 — declared license metadata → SupplyChainHealth) | ✅ |
 | 2.31 | Python security engine (§V.7 — eval/pickle/shell/yaml.load → Security dim; broadens beyond JS/TS) | ✅ |
 | 2.32 | Go security engine (§V.7 — TLS-skip/shell-exec/SQL-concat/weak-hash → Security dim) | ✅ |
+| 2.33 | Java security engine (§V.7 — Runtime.exec/SQL-concat/readObject/ECB → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -146,6 +147,13 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.33 result (Java engine):** `JavaScanner` flags Java security anti-patterns — `Runtime.getRuntime().exec`
+(CWE-78), JDBC statements built by string concatenation/`String.format` (CWE-89), `readObject()`
+deserialization (CWE-502), ECB/DES ciphers (CWE-327), and MD5/SHA-1 (CWE-327) — feeding the Security
+dimension. Block + quote-aware `//` comment stripping prevents comment false positives. Isolated fixture
+`fixtures/insecure-java`; 2 tests including a safe-Java no-false-positive check (`PreparedStatement`,
+`SHA-256`, `AES/GCM`).
 
 **2.32 result (Go engine):** `GoScanner` flags Go security anti-patterns — `InsecureSkipVerify: true`
 (CWE-295), shell exec via `exec.Command("sh","-c",…)` (CWE-78), SQL built by string concatenation/Sprintf

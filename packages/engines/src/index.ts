@@ -25,6 +25,7 @@ export * from './cloudformation-scanner.js';
 export * from './license-scanner.js';
 export * from './python-scanner.js';
 export * from './go-scanner.js';
+export * from './java-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -47,6 +48,7 @@ import { CloudFormationScanner } from './cloudformation-scanner.js';
 import { LicenseScanner } from './license-scanner.js';
 import { PythonScanner } from './python-scanner.js';
 import { GoScanner } from './go-scanner.js';
+import { JavaScanner } from './java-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -71,5 +73,6 @@ export function defaultStaticEngines(): Engine[] {
     new LicenseScanner(),
     new PythonScanner(),
     new GoScanner(),
+    new JavaScanner(),
   ];
 }

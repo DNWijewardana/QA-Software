@@ -291,6 +291,22 @@ that must NOT be flagged (comment-stripping test).
 `tests/go.test.ts` asserts each rule fires, the commented pattern is not flagged, and safe Go
 (`tls.Config{}`, `exec.Command("ls", …)`, parameterized query, `sha256`) yields no findings.
 
+## `insecure-java/`
+
+Intentionally-insecure Java for the `JavaScanner` (spec V.7). Includes a comment mentioning `Runtime.exec`
+that must NOT be flagged (comment-stripping test).
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| `Runtime.getRuntime().exec(...)` | `JAVA-RUNTIME-EXEC-001` | High (CWE-78) |
+| SQL built by string concatenation | `JAVA-SQL-CONCAT-001` | High (CWE-89) |
+| `readObject()` deserialization | `JAVA-DESERIALIZE-001` | High (CWE-502) |
+| ECB/DES cipher | `JAVA-ECB-001` | Medium (CWE-327) |
+| `MessageDigest.getInstance("MD5")` | `JAVA-WEAK-HASH-001` | Low (CWE-327) |
+
+`tests/java.test.ts` asserts each rule fires, the commented pattern is not flagged, and safe Java
+(`PreparedStatement`, `SHA-256`, `AES/GCM`) yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

@@ -95,6 +95,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.23 | SQL migration-safety engine (§V.31 — destructive migrations → Reliability dim) | ✅ |
 | 2.25 | Extend secret/PII scanning to `.sql`/`.xml`/`.properties` (+ fix multi-PII redaction leak) | ✅ |
 | 2.27 | Config/documentation-quality engine (§V.29 → Maintainability dim) | ✅ |
+| 2.28 | Terraform IaC/CSPM engine (§V.18 — public buckets/IAM/SG/encryption → CloudIaCPosture) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -141,6 +142,13 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.28 result (Terraform engine):** `TerraformScanner` analyses `.tf` files with deterministic regex after
+stripping HCL comments (so patterns inside comments don't false-positive) — no HCL parser dependency. It
+flags public S3 ACLs, security groups open to `0.0.0.0/0`, `encrypted = false`, over-broad IAM
+(`Action`/`Resource = "*"`), hardcoded secrets (redacted, CWE-798), and auto-assigned public IPs — feeding
+the CloudIaCPosture dimension (CIS AWS references). Isolated fixture `fixtures/insecure-terraform`; 3 tests
+(all rules + no-leak + comment-stripping/secure-config yields none).
 
 **2.27 result (config/docs engine):** `ConfigDocsScanner` runs project-hygiene checks (§V.29): missing
 README (`DOC-README-001`) / LICENSE (`DOC-LICENSE-001`) (Informational), a committed `.env` file

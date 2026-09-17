@@ -225,6 +225,23 @@ SQL seed data with a hardcoded secret + PII, to exercise the secret and privacy 
 
 `tests/sql-secrets.test.ts` asserts detection and that no raw secret/PII value reaches evidence.
 
+## `insecure-terraform/`
+
+An intentionally-insecure Terraform config for the `TerraformScanner` (spec V.18, CIS AWS). It also
+contains a comment mentioning a public ACL that must NOT be flagged (comment-stripping test).
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Public S3 bucket ACL | `TF-S3-PUBLIC-001` | High |
+| Security group open to `0.0.0.0/0` | `TF-SG-OPEN-001` | High |
+| Over-broad IAM (`Action`/`Resource` = `*`) | `TF-IAM-WILDCARD-001` | High |
+| Hardcoded secret (redacted) | `TF-SECRET-001` | High |
+| Encryption disabled | `TF-UNENCRYPTED-001` | Medium |
+| Auto-assigned public IP | `TF-PUBLIC-IP-001` | Low |
+
+`tests/terraform.test.ts` asserts each rule fires, the secret never reaches evidence, the commented ACL is
+not flagged, and a secure config yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

@@ -1,4 +1,5 @@
-import type { ComplianceMatrix, DimensionScore, OverallResult } from '@/app/lib/types';
+import type { ComplianceMatrix, DimensionScore, OverallResult, Sbom, SeoReport } from '@/app/lib/types';
+import { SeverityBadge } from './Badges';
 
 /** Accessible score meter — the value is shown as text and via role="meter" (never color alone). */
 function ScoreMeter({ label, value }: { label: string; value: number }) {
@@ -67,6 +68,74 @@ export function DimensionScores({ scores }: { scores: DimensionScore[] }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+export function SbomPanel({ sbom }: { sbom: Sbom }) {
+  const notTested = sbom.components.filter((c) => c.vulnerabilityStatus === 'NOT_TESTED').length;
+  return (
+    <section className="panel" aria-labelledby="sbom-h">
+      <h3 id="sbom-h">Supply chain (SBOM)</h3>
+      <p className="muted">
+        {sbom.format} {sbom.specVersion} · source: {sbom.source} · {sbom.components.length} component(s)
+      </p>
+      {notTested > 0 ? (
+        <p className="notice" role="status">
+          {notTested}/{sbom.components.length} components were NOT checked against a vulnerability database
+          (offline). Reported as <strong>NOT_TESTED</strong> — not &ldquo;clean&rdquo;.
+        </p>
+      ) : null}
+      <div className="table-wrap">
+        <table>
+          <caption>Declared dependencies</caption>
+          <thead>
+            <tr>
+              <th scope="col">Component</th>
+              <th scope="col">Version</th>
+              <th scope="col">Scope</th>
+              <th scope="col">Vulnerability status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sbom.components.map((c) => (
+              <tr key={c.purl ?? `${c.name}@${c.version}`}>
+                <td>{c.name}</td>
+                <td className="mono">{c.version}</td>
+                <td>{c.scope}</td>
+                <td>{c.vulnerabilityStatus.replace('_', ' ')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export function SeoPanel({ seo }: { seo: SeoReport }) {
+  return (
+    <section className="panel" aria-labelledby="seo-h">
+      <h3 id="seo-h">SEO (separate from software quality)</h3>
+      <p className="muted">{seo.note}</p>
+      <p>
+        <strong>{seo.summary.issues}</strong> issue(s) across {seo.summary.pages} page(s)
+      </p>
+      {seo.findings.length > 0 ? (
+        <ul className="scan-list">
+          {seo.findings.map((f) => (
+            <li key={f.id}>
+              <div className="row">
+                <SeverityBadge severity={f.severity} />
+                <span className="grow">{f.title}</span>
+                <span className="mono muted">{f.ruleId}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="muted">No SEO issues detected.</p>
+      )}
     </section>
   );
 }

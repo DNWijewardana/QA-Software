@@ -77,6 +77,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.6 | `apps/api` — submit/status/findings/report+export endpoints, path-safety guard | ✅ (node:http; NestJS migration deferred — see doc 02) |
 | 2.7 | `apps/web` (Next.js) — submit → live status → findings → report/exports (WCAG 2.2 AA) | ✅ |
 | 2.21 | `apps/web` dashboard panels — overall + dimension meters + compliance matrix (WCAG 2.2 AA) | ✅ |
+| 2.24 | `apps/web` SBOM + SEO panels — supply-chain inventory + SEO report on the scan page | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -115,6 +116,12 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.24 result (SBOM + SEO web panels):** the scan detail page now also renders a **Supply-chain (SBOM)**
+panel (CycloneDX components table with scope + honest `NOT_TESTED` vulnerability status prominently noted)
+and an **SEO** panel (issue list, labelled "separate from software quality" per §V.24). Both render only when
+present in the result. `next build` clean; verified live — `vulnerable-sample` shows 4 SBOM components,
+`seo-issues` shows 9 SEO issues.
 
 **2.21 result (web dashboard):** the scan detail page now visualizes the full result: an **Overall** KPI
 panel (score, evidence coverage, critical blockers, high-risk, manual verification), **Quality dimensions**

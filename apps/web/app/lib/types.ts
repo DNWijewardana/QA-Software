@@ -78,11 +78,36 @@ export interface ComplianceMatrix {
   summary: { total: number; assessed: number; satisfied: number; gaps: number; notAssessed: number };
 }
 
+export interface SbomComponent {
+  name: string;
+  version: string;
+  type: string;
+  purl?: string;
+  scope: string;
+  vulnerabilityStatus: string;
+}
+
+export interface Sbom {
+  format: string;
+  specVersion: string;
+  source: string;
+  components: SbomComponent[];
+  notes: string[];
+}
+
+export interface SeoReport {
+  note: string;
+  findings: Finding[];
+  summary: { pages: number; issues: number };
+}
+
 /** The subset of the full ScanResult the dashboard panels consume. */
 export interface FullScanResult {
   scores: DimensionScore[];
   overall: OverallResult;
   compliance?: ComplianceMatrix;
+  sbom?: Sbom;
+  seo?: SeoReport;
 }
 
 export const SEVERITY_ORDER = ['Critical', 'High', 'Medium', 'Low', 'Informational'] as const;

@@ -5,7 +5,7 @@ import type { Finding, FullScanResult, ScanSummary } from '@/app/lib/types';
 import { isTerminal, SEVERITY_ORDER } from '@/app/lib/types';
 import { DecisionBadge } from './Badges';
 import { FindingsTable } from './FindingsTable';
-import { CompliancePanel, DimensionScores, OverallPanel } from './QualityPanels';
+import { CompliancePanel, DimensionScores, OverallPanel, SbomPanel, SeoPanel } from './QualityPanels';
 
 const REPORT_FORMATS = ['human', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance', 'seo'] as const;
 
@@ -132,6 +132,8 @@ export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSum
               <OverallPanel overall={full.overall} />
               <DimensionScores scores={full.scores} />
               {full.compliance ? <CompliancePanel compliance={full.compliance} /> : null}
+              {full.sbom ? <SbomPanel sbom={full.sbom} /> : null}
+              {full.seo ? <SeoPanel seo={full.seo} /> : null}
             </>
           ) : null}
 

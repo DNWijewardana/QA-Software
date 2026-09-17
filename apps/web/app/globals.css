@@ -231,3 +231,50 @@ tbody tr:hover { background: var(--surface-2); }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* Quality panels */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  margin: 1rem 0;
+}
+.panel h3 { margin-top: 0; }
+
+.kpis { display: flex; flex-wrap: wrap; gap: 1rem; }
+.kpi {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 0.6rem 0.9rem;
+  min-width: 120px;
+}
+.kpi-value { font-size: 1.4rem; font-weight: 700; }
+.kpi-label { font-size: 0.8rem; color: var(--text-muted); }
+
+.dim-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.9rem; }
+.dim-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.3rem; }
+.dim-name { font-weight: 600; }
+.dim-why { margin: 0.35rem 0 0; font-size: 0.85rem; }
+
+.meter-track {
+  height: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.meter-fill { height: 100%; }
+.meter-track.good .meter-fill { background: var(--go); }
+.meter-track.warn .meter-fill { background: var(--conditions); }
+.meter-track.bad .meter-fill { background: var(--nogo); }
+@media (prefers-reduced-motion: no-preference) {
+  .meter-fill { transition: width 0.3s ease; }
+}
+
+/* Compliance control status — text + color, never color alone (WCAG 1.4.1) */
+.ctrl { font-weight: 600; white-space: nowrap; }
+.ctrl.SATISFIED { color: var(--go); }
+.ctrl.GAPS { color: var(--nogo); }
+.ctrl.NOT_ASSESSED { color: var(--text-muted); }

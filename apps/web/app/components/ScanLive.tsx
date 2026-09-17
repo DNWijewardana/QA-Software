@@ -1,16 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { Finding, ScanSummary } from '@/app/lib/types';
+import type { Finding, FullScanResult, ScanSummary } from '@/app/lib/types';
 import { isTerminal, SEVERITY_ORDER } from '@/app/lib/types';
 import { DecisionBadge } from './Badges';
 import { FindingsTable } from './FindingsTable';
+import { CompliancePanel, DimensionScores, OverallPanel } from './QualityPanels';
 
 const REPORT_FORMATS = ['human', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance', 'seo'] as const;
 
 export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSummary | null }) {
   const [record, setRecord] = useState<ScanSummary | null>(initial);
   const [findings, setFindings] = useState<Finding[] | null>(null);
+  const [full, setFull] = useState<FullScanResult | null>(null);
   const [severity, setSeverity] = useState<string>('');
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -59,6 +61,25 @@ export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSum
     if (state === 'COMPLETED') void loadFindings();
   }, [state, loadFindings]);
 
+  // Once completed, load the full result (scores, overall, compliance) for the dashboard panels.
+  useEffect(() => {
+    if (state !== 'COMPLETED') return;
+    let active = true;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/scans/${scanId}/report?format=json`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const body = (await res.json()) as FullScanResult;
+        if (active) setFull(body);
+      } catch {
+        /* panels are optional — ignore load errors */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [scanId, state]);
+
   const pct = record?.progress.pct ?? 0;
 
   return (
@@ -105,6 +126,14 @@ export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSum
               </a>
             ))}
           </div>
+
+          {full ? (
+            <>
+              <OverallPanel overall={full.overall} />
+              <DimensionScores scores={full.scores} />
+              {full.compliance ? <CompliancePanel compliance={full.compliance} /> : null}
+            </>
+          ) : null}
 
           <h3>Findings</h3>
           <div className="field" style={{ maxWidth: 260 }}>

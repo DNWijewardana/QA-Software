@@ -62,7 +62,7 @@ for evidence artifacts, optional search index for global search.
 
 | Path | Purpose |
 |---|---|
-| `apps/web` | Next.js UI (BFF proxy to the API): submit → live status → findings → reports; WCAG 2.2 AA |
+| `apps/web` | Next.js UI (BFF proxy): submit → live status → dimension-score meters + compliance matrix + findings → reports; WCAG 2.2 AA |
 | `apps/api` | HTTP API: submit scans, poll status, findings, reports/exports (spec VI.9) |
 | `apps/worker` | Worker that processes queued scan jobs (spec VI.6/VI.7) |
 | `apps/cli` | CLI driver for a one-shot SAFE_STATIC scan with dual output |

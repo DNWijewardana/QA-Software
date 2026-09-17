@@ -99,6 +99,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.29 | CloudFormation IaC/CSPM engine (§V.18 — same CSPM checks over CFN templates) | ✅ |
 | 2.30 | License/legal-checks engine (§V.30 — declared license metadata → SupplyChainHealth) | ✅ |
 | 2.31 | Python security engine (§V.7 — eval/pickle/shell/yaml.load → Security dim; broadens beyond JS/TS) | ✅ |
+| 2.32 | Go security engine (§V.7 — TLS-skip/shell-exec/SQL-concat/weak-hash → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -145,6 +146,12 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.32 result (Go engine):** `GoScanner` flags Go security anti-patterns — `InsecureSkipVerify: true`
+(CWE-295), shell exec via `exec.Command("sh","-c",…)` (CWE-78), SQL built by string concatenation/Sprintf
+(CWE-89), and MD5/SHA-1 (CWE-327) — feeding the Security dimension. It strips block comments and uses a
+quote/raw-string-aware `//` line-comment stripper, so patterns in comments (and `//` inside strings) don't
+false-positive. Isolated fixture `fixtures/insecure-go`; 2 tests including a safe-Go no-false-positive check.
 
 **2.31 result (Python engine):** `PythonScanner` broadens coverage beyond JS/TS. With quote-aware Python
 comment-stripping (so patterns in comments don't false-positive), it flags `eval`/`exec` (CWE-95),

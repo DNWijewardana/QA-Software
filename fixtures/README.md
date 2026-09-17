@@ -276,6 +276,21 @@ must NOT be flagged (comment-stripping test).
 `tests/python.test.ts` asserts each rule fires, the commented `eval(` is not flagged, and safe Python
 (`ast.literal_eval`, `shell=False`, `yaml.safe_load`, `sha256`) yields no findings.
 
+## `insecure-go/`
+
+Intentionally-insecure Go for the `GoScanner` (spec V.7). Includes a comment mentioning `InsecureSkipVerify`
+that must NOT be flagged (comment-stripping test).
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| `InsecureSkipVerify: true` | `GO-TLS-INSECURE-001` | High (CWE-295) |
+| `exec.Command("sh", "-c", …)` | `GO-EXEC-SHELL-001` | High (CWE-78) |
+| SQL built by string concatenation | `GO-SQL-CONCAT-001` | Medium (CWE-89) |
+| `md5`/`sha1` | `GO-WEAK-HASH-001` | Low (CWE-327) |
+
+`tests/go.test.ts` asserts each rule fires, the commented pattern is not flagged, and safe Go
+(`tls.Config{}`, `exec.Command("ls", …)`, parameterized query, `sha256`) yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

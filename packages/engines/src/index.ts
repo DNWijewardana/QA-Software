@@ -24,6 +24,7 @@ export * from './terraform-scanner.js';
 export * from './cloudformation-scanner.js';
 export * from './license-scanner.js';
 export * from './python-scanner.js';
+export * from './go-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -45,6 +46,7 @@ import { TerraformScanner } from './terraform-scanner.js';
 import { CloudFormationScanner } from './cloudformation-scanner.js';
 import { LicenseScanner } from './license-scanner.js';
 import { PythonScanner } from './python-scanner.js';
+import { GoScanner } from './go-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -68,5 +70,6 @@ export function defaultStaticEngines(): Engine[] {
     new CloudFormationScanner(),
     new LicenseScanner(),
     new PythonScanner(),
+    new GoScanner(),
   ];
 }

@@ -212,6 +212,19 @@ safe variants that must NOT be flagged (the test asserts exact counts).
 `tests/sql-migration.test.ts` asserts each destructive rule fires exactly once (so WHERE-scoped and
 defaulted statements are not false-flagged), and a safe additive migration yields no findings.
 
+## `sql-with-secrets/`
+
+SQL seed data with a hardcoded secret + PII, to exercise the secret and privacy engines on `.sql` files
+(`.sql` is a recognised text type). Uses `INSERT` statements so it does not trip the migration-safety engine.
+
+| Seeded defect | Expected rule |
+|---|---|
+| Hardcoded AWS key | `SEC-SECRET-001` |
+| Personal email | `PRIV-PII-EMAIL-001` |
+| Luhn-valid card | `PRIV-PII-CARD-001` |
+
+`tests/sql-secrets.test.ts` asserts detection and that no raw secret/PII value reaches evidence.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

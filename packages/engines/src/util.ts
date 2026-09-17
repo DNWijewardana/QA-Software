@@ -12,6 +12,7 @@ export function findingId(ruleId: string, ordinal: number): string {
 const TEXT_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.py', '.java', '.go', '.rb', '.php', '.rs', '.cs',
   '.json', '.env', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.txt', '.md', '.html', '.css', '.sh',
+  '.sql', '.xml', '.properties',
 ]);
 
 export function isLikelyTextFile(relPath: string): boolean {

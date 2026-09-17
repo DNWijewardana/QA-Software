@@ -92,6 +92,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.20 | Privacy / PII-discovery engine (§V.16 — Luhn-validated cards, SSN, email → Privacy dim) | ✅ |
 | 2.22 | CI/CD security engine (§V.19 — GitHub Actions: unpinned/injection/PR-target → Security dim) | ✅ |
 | 2.23 | SQL migration-safety engine (§V.31 — destructive migrations → Reliability dim) | ✅ |
+| 2.25 | Extend secret/PII scanning to `.sql`/`.xml`/`.properties` (+ fix multi-PII redaction leak) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -131,6 +132,14 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.25 result (SQL/text secret+PII + redaction fix):** `.sql`, `.xml`, and `.properties` are now recognised
+text types, so the secret-scanner and privacy-scanner analyse SQL seed/migration data (hardcoded credentials
+and PII are common there). This surfaced and fixed a **redaction bug**: the privacy engine previously masked
+only the value that triggered a finding, so a finding's evidence could still leak a *different* PII value on
+the same line (e.g. the email finding left the card number visible). `redactAllPii` now masks all cards/SSNs/
+emails from a line for every finding's evidence. Verified by a no-leak test and on disk. Isolated fixture
+`fixtures/sql-with-secrets`; 2 tests.
 
 **2.23 result (SQL migration engine):** `SqlMigrationScanner` analyses `.sql` files by stripping comments
 (preserving line numbers), splitting into statements, and classifying each: DROP TABLE / DROP COLUMN /

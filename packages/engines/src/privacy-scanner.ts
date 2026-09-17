@@ -52,9 +52,17 @@ function isScanTarget(f: ProjectFile): boolean {
   return isLikelyTextFile(f.path);
 }
 
-/** Mask a specific value inside a line, then run the shared redactor over the rest. */
-function maskLine(line: string, value: string, label: string): string {
-  return redact(line.split(value).join(`«REDACTED:${label}»`)).text;
+/**
+ * Redact ALL PII from a line (cards, SSNs, then emails/secrets via the shared redactor), so a finding's
+ * evidence never leaks a different PII value that happens to share the line. Uses fresh regexes to avoid
+ * interfering with the caller's stateful `exec` loops.
+ */
+function redactAllPii(line: string): string {
+  let out = line.replace(/\b(?:\d[ -]?){13,19}\b/g, (m) => (luhnValid(m) ? '«REDACTED:credit-card»' : m));
+  out = out.replace(/\b(\d{3})-(\d{2})-(\d{4})\b/g, (m, a: string, g: string, s: string) =>
+    validSsn(a, g, s) ? '«REDACTED:ssn»' : m,
+  );
+  return redact(out).text;
 }
 
 export class PrivacyScanner implements Engine {
@@ -103,7 +111,7 @@ export class PrivacyScanner implements Engine {
           if (!luhnValid(value)) continue;
           emit('PRIV-PII-CARD-001', 'Credit-card number in source', 'High', loc(),
             'A Luhn-valid credit-card number is hardcoded in source. Storing card data in code is a serious PCI/privacy violation (CWE-312). The value has been redacted.',
-            maskLine(line, value, 'credit-card'), 'Remove the card number; never store PAN in source. Use a tokenized/PCI-compliant vault.', ['CWE-312']);
+            redactAllPii(line), 'Remove the card number; never store PAN in source. Use a tokenized/PCI-compliant vault.', ['CWE-312']);
         }
 
         // SSNs — valid ranges only
@@ -113,7 +121,7 @@ export class PrivacyScanner implements Engine {
           if (!validSsn(sm[1]!, sm[2]!, sm[3]!)) continue;
           emit('PRIV-PII-SSN-001', 'Social Security Number in source', 'Medium', loc(),
             'A value matching a US SSN is hardcoded in source. Personal identifiers in code are a privacy exposure (CWE-359). The value has been redacted.',
-            maskLine(line, sm[0], 'ssn'), 'Remove the SSN from source; handle personal identifiers only in protected, access-controlled stores.', ['CWE-359']);
+            redactAllPii(line), 'Remove the SSN from source; handle personal identifiers only in protected, access-controlled stores.', ['CWE-359']);
         }
 
         // emails — exclude placeholder domains
@@ -126,7 +134,7 @@ export class PrivacyScanner implements Engine {
           if (local.startsWith('noreply') || local.startsWith('no-reply')) continue;
           emit('PRIV-PII-EMAIL-001', 'Personal email address in source', 'Informational', loc(),
             'A real-looking email address is hardcoded in source. Confirm it is not personal data and belongs in the repository. The value has been redacted.',
-            maskLine(line, em[0], 'email'), 'Move contact addresses to configuration; avoid embedding personal emails in code.', []);
+            redactAllPii(line), 'Move contact addresses to configuration; avoid embedding personal emails in code.', []);
         }
       }
     }

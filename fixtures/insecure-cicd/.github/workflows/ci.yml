@@ -1,0 +1,21 @@
+# FIXTURE — intentionally insecure GitHub Actions workflow for the golden corpus (spec X.3). NOT for real use.
+name: ci
+# SEEDED: pull_request_target trigger (CI-PR-TARGET-001)
+on: [pull_request_target]
+# SEEDED: no top-level permissions block (CI-PERMISSIONS-000)
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # SEEDED: action pinned to a branch (CI-ACTION-UNPINNED-001)
+      - uses: actions/checkout@main
+      # SEEDED: action with no version (CI-ACTION-UNPINNED-001)
+      - uses: actions/setup-node
+      # SEEDED: action pinned to a tag, not a SHA (CI-ACTION-TAG-001, informational)
+      - uses: actions/cache@v4
+      # SEEDED: script injection from untrusted PR title (CI-SCRIPT-INJECTION-001, CWE-94)
+      - name: greet
+        run: echo "PR title is ${{ github.event.pull_request.title }}"
+      # SEEDED: secret echoed to logs (CI-SECRET-ECHO-001, CWE-532)
+      - name: leak
+        run: echo ${{ secrets.API_TOKEN }}

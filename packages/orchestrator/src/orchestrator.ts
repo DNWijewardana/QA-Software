@@ -250,6 +250,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
 function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Security') return 'Security';
   if (f.category === 'API') return 'Security'; // API security findings score under Security
+  if (f.category === 'CICD') return 'Security'; // CI/CD pipeline-security findings score under Security
   if (f.category === 'Maintainability') return 'Maintainability';
   if (f.category === 'SupplyChain') return 'SupplyChainHealth';
   if (f.category === 'CloudIaC') return 'CloudIaCPosture';

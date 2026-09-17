@@ -89,6 +89,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.18 | Logging-quality engine (§V.25 — sensitive-data-in-logs → Observability dim) | ✅ |
 | 2.19 | Error-handling engine (§V.14 — swallowed errors, exposed stack traces → Reliability dim) | ✅ |
 | 2.20 | Privacy / PII-discovery engine (§V.16 — Luhn-validated cards, SSN, email → Privacy dim) | ✅ |
+| 2.22 | CI/CD security engine (§V.19 — GitHub Actions: unpinned/injection/PR-target → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -122,6 +123,13 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.22 result (CI/CD engine):** `CicdScanner` parses `.github/workflows/*.yml` and flags pipeline-security
+issues (§V.19): script injection from untrusted event data (`CI-SCRIPT-INJECTION-001`, High, CWE-94),
+`pull_request_target` triggers, unpinned actions (branch/no-ref, and tag-not-SHA as informational), secrets
+echoed in run steps (CWE-532), and missing least-privilege permissions. Findings score under Security
+(category `CICD` → `Security`). Only files under `.github/workflows/` are analysed. Isolated fixture
+`fixtures/insecure-cicd`; 2 tests (all rules + hardened workflow yields none).
 
 **2.20 result (privacy engine):** `PrivacyScanner` discovers hardcoded PII in source — credit-card numbers
 (Luhn-validated to avoid false positives, `PRIV-PII-CARD-001`, High, CWE-312), US SSNs in valid ranges

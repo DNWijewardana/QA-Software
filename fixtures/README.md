@@ -178,6 +178,23 @@ test values, and the scanner **redacts every PII value** before it reaches evide
 `tests/privacy.test.ts` asserts each rule fires, the Privacy dimension is scored, **no raw PII reaches
 evidence**, and that a Luhn-invalid number + a placeholder email produce no false positives.
 
+## `insecure-cicd/`
+
+An intentionally-insecure GitHub Actions workflow (`.github/workflows/ci.yml`) for the `CicdScanner`
+(spec V.19):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Script injection from PR title | `CI-SCRIPT-INJECTION-001` | High (CWE-94) |
+| `pull_request_target` trigger | `CI-PR-TARGET-001` | Medium |
+| Action pinned to branch / no version | `CI-ACTION-UNPINNED-001` | Medium |
+| Secret echoed in a run step | `CI-SECRET-ECHO-001` | Medium |
+| No least-privilege permissions | `CI-PERMISSIONS-000` | Informational |
+| Action pinned to a tag (not SHA) | `CI-ACTION-TAG-001` | Informational |
+
+`tests/cicd.test.ts` asserts each rule fires, script-injection is High/CWE-94, CI findings score under
+Security, and a hardened workflow (SHA-pinned action, permissions block, `pull_request`) yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

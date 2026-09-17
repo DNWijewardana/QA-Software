@@ -195,6 +195,23 @@ An intentionally-insecure GitHub Actions workflow (`.github/workflows/ci.yml`) f
 `tests/cicd.test.ts` asserts each rule fires, script-injection is High/CWE-94, CI findings score under
 Security, and a hardened workflow (SHA-pinned action, permissions block, `pull_request`) yields no findings.
 
+## `dangerous-migration/`
+
+A SQL migration with destructive statements for the `SqlMigrationScanner` (spec V.31). It also contains
+safe variants that must NOT be flagged (the test asserts exact counts).
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| `DROP TABLE` | `SQL-DROP-TABLE-001` | High |
+| `DROP COLUMN` | `SQL-DROP-COLUMN-001` | High |
+| `TRUNCATE` | `SQL-TRUNCATE-001` | High |
+| `DELETE` without `WHERE` | `SQL-DELETE-NO-WHERE-001` | High |
+| `UPDATE` without `WHERE` | `SQL-UPDATE-NO-WHERE-001` | High |
+| `ADD COLUMN NOT NULL` without `DEFAULT` | `SQL-NOTNULL-NO-DEFAULT-001` | Medium |
+
+`tests/sql-migration.test.ts` asserts each destructive rule fires exactly once (so WHERE-scoped and
+defaulted statements are not false-flagged), and a safe additive migration yields no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

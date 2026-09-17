@@ -96,6 +96,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.25 | Extend secret/PII scanning to `.sql`/`.xml`/`.properties` (+ fix multi-PII redaction leak) | ✅ |
 | 2.27 | Config/documentation-quality engine (§V.29 → Maintainability dim) | ✅ |
 | 2.28 | Terraform IaC/CSPM engine (§V.18 — public buckets/IAM/SG/encryption → CloudIaCPosture) | ✅ |
+| 2.29 | CloudFormation IaC/CSPM engine (§V.18 — same CSPM checks over CFN templates) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -142,6 +143,14 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.29 result (CloudFormation engine):** `CloudFormationScanner` recursively walks CloudFormation templates
+(JSON parsed reliably; YAML best-effort inside try/catch since `!Ref`/`!Sub` intrinsics can defeat a plain
+YAML parser) and flags public S3 ACLs, security groups open to `0.0.0.0/0`, `Encrypted: false`, over-broad
+IAM (`Action`/`Resource = "*"`, found even when nested in `Policies[].PolicyDocument.Statement[]`), hardcoded
+secrets (redacted, CWE-798), and auto-assigned public IPs — feeding CloudIaCPosture. Only files whose
+`Resources` contain `AWS::*` types are treated as templates, so ordinary JSON/YAML is ignored. Isolated
+fixture `fixtures/insecure-cloudformation` (JSON, so the verified path is deterministic); 3 tests.
 
 **2.28 result (Terraform engine):** `TerraformScanner` analyses `.tf` files with deterministic regex after
 stripping HCL comments (so patterns inside comments don't false-positive) — no HCL parser dependency. It

@@ -242,6 +242,22 @@ contains a comment mentioning a public ACL that must NOT be flagged (comment-str
 `tests/terraform.test.ts` asserts each rule fires, the secret never reaches evidence, the commented ACL is
 not flagged, and a secure config yields no findings.
 
+## `insecure-cloudformation/`
+
+An intentionally-insecure CloudFormation JSON template for the `CloudFormationScanner` (spec V.18, CIS AWS):
+
+| Seeded defect | Expected rule | Severity |
+|---|---|---|
+| Public S3 bucket ACL | `CFN-S3-PUBLIC-001` | High |
+| Security group open to `0.0.0.0/0` | `CFN-SG-OPEN-001` | High |
+| Over-broad IAM (`Action`/`Resource` = `*`) | `CFN-IAM-WILDCARD-001` | High |
+| Hardcoded secret (redacted) | `CFN-SECRET-001` | High |
+| Encryption disabled | `CFN-UNENCRYPTED-001` | Medium |
+| Auto-assigned public IP | `CFN-PUBLIC-IP-001` | Low |
+
+`tests/cloudformation.test.ts` asserts each rule fires, the secret never reaches evidence, and a secure
+template + a non-CloudFormation JSON yield no findings.
+
 ## Adding fixtures
 
 Each new engine (Phase 2+) ships with a fixture that seeds the defect it detects, so detection precision/recall

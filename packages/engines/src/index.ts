@@ -21,6 +21,7 @@ export * from './cicd-scanner.js';
 export * from './sql-migration-scanner.js';
 export * from './config-docs-scanner.js';
 export * from './terraform-scanner.js';
+export * from './cloudformation-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -39,6 +40,7 @@ import { CicdScanner } from './cicd-scanner.js';
 import { SqlMigrationScanner } from './sql-migration-scanner.js';
 import { ConfigDocsScanner } from './config-docs-scanner.js';
 import { TerraformScanner } from './terraform-scanner.js';
+import { CloudFormationScanner } from './cloudformation-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -59,5 +61,6 @@ export function defaultStaticEngines(): Engine[] {
     new SqlMigrationScanner(),
     new ConfigDocsScanner(),
     new TerraformScanner(),
+    new CloudFormationScanner(),
   ];
 }

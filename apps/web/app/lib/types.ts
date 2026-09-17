@@ -101,6 +101,11 @@ export interface SeoReport {
   summary: { pages: number; issues: number };
 }
 
+export interface ManualReviewItem {
+  item: string;
+  reason: string;
+}
+
 /** The subset of the full ScanResult the dashboard panels consume. */
 export interface FullScanResult {
   scores: DimensionScore[];
@@ -108,6 +113,8 @@ export interface FullScanResult {
   compliance?: ComplianceMatrix;
   sbom?: Sbom;
   seo?: SeoReport;
+  manualReviewQueue: ManualReviewItem[];
+  limitations: string[];
 }
 
 export const SEVERITY_ORDER = ['Critical', 'High', 'Medium', 'Low', 'Informational'] as const;

@@ -1,4 +1,4 @@
-import type { ComplianceMatrix, DimensionScore, OverallResult, Sbom, SeoReport } from '@/app/lib/types';
+import type { ComplianceMatrix, DimensionScore, ManualReviewItem, OverallResult, Sbom, SeoReport } from '@/app/lib/types';
 import { SeverityBadge } from './Badges';
 
 /** Accessible score meter — the value is shown as text and via role="meter" (never color alone). */
@@ -136,6 +136,42 @@ export function SeoPanel({ seo }: { seo: SeoReport }) {
       ) : (
         <p className="muted">No SEO issues detected.</p>
       )}
+    </section>
+  );
+}
+
+export function ManualReviewPanel({ items }: { items: ManualReviewItem[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="panel" aria-labelledby="manual-h">
+      <h3 id="manual-h">Manual review required (human judgment)</h3>
+      <p className="muted">
+        Automated analysis cannot cover these. They require a person and are not reflected in the scores.
+      </p>
+      <ul className="dim-list">
+        {items.map((m, i) => (
+          <li key={i} className="dim">
+            <strong>{m.item}</strong>
+            <p className="muted" style={{ margin: '0.2rem 0 0' }}>
+              {m.reason}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function LimitationsPanel({ limitations }: { limitations: string[] }) {
+  if (limitations.length === 0) return null;
+  return (
+    <section className="panel" aria-labelledby="limits-h">
+      <h3 id="limits-h">Limitations (never hidden)</h3>
+      <ul>
+        {limitations.map((l, i) => (
+          <li key={i}>{l}</li>
+        ))}
+      </ul>
     </section>
   );
 }

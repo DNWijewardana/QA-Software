@@ -78,6 +78,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.7 | `apps/web` (Next.js) — submit → live status → findings → report/exports (WCAG 2.2 AA) | ✅ |
 | 2.21 | `apps/web` dashboard panels — overall + dimension meters + compliance matrix (WCAG 2.2 AA) | ✅ |
 | 2.24 | `apps/web` SBOM + SEO panels — supply-chain inventory + SEO report on the scan page | ✅ |
+| 2.26 | `apps/web` Manual-review queue + Limitations panels (§IX.5, Rule 10 — honesty UI) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -117,6 +118,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.26 result (honesty UI panels):** the scan detail page now renders a **Manual review required** panel
+(the human-judgment items — subjective UX/architecture review, and the full WCAG 2.2 manual audit when the
+a11y engine ran — spec IX.5) and a **Limitations (never hidden)** panel (spec Rule 10 — what was not tested
+and why). This completes the dashboard's honesty story: scores, evidence, *and* an explicit account of what
+automation cannot cover. `next build` clean; verified live (the inaccessible-html scan surfaces 2 manual
+items and 2 limitations).
 
 **2.24 result (SBOM + SEO web panels):** the scan detail page now also renders a **Supply-chain (SBOM)**
 panel (CycloneDX components table with scope + honest `NOT_TESTED` vulnerability status prominently noted)

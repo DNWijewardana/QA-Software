@@ -253,6 +253,7 @@ function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'CICD') return 'Security'; // CI/CD pipeline-security findings score under Security
   if (f.category === 'Maintainability') return 'Maintainability';
   if (f.category === 'SupplyChain') return 'SupplyChainHealth';
+  if (f.category === 'License') return 'SupplyChainHealth'; // license governance is a supply-chain concern
   if (f.category === 'CloudIaC') return 'CloudIaCPosture';
   if (f.category === 'Accessibility') return 'Accessibility';
   if (f.category === 'Performance') return 'Performance';

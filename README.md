@@ -69,7 +69,7 @@ for evidence artifacts, optional search index for global search.
 | `packages/core` | Shared domain types: findings, evidence, scoring, vocabularies (the enforced invariants) |
 | `packages/orchestrator` | The reusable scan pipeline + human report renderer (shared by CLI, worker, API) |
 | `packages/jobs` | Async job core: `JobQueue`/`ScanStore`/`ScanService` adapters (in-memory now; BullMQ/Postgres next) |
-| `packages/engines` | Pluggable engine adapters (`TestEngine`, `Scanner`, … — spec VI.2): profiler, secret-scanner, code-quality, dependency-scanner, dockerfile-scanner, kubernetes-scanner, compose-scanner, openapi-scanner, html-a11y-scanner, performance-scanner, logging-scanner, error-handling-scanner, privacy-scanner, cicd-scanner, sql-migration-scanner, config-docs-scanner, terraform-scanner, cloudformation-scanner; plus separate SEO analyzer |
+| `packages/engines` | Pluggable engine adapters (`TestEngine`, `Scanner`, … — spec VI.2): profiler, secret-scanner, code-quality, dependency-scanner, dockerfile-scanner, kubernetes-scanner, compose-scanner, openapi-scanner, html-a11y-scanner, performance-scanner, logging-scanner, error-handling-scanner, privacy-scanner, cicd-scanner, sql-migration-scanner, config-docs-scanner, terraform-scanner, cloudformation-scanner, license-scanner; plus separate SEO analyzer |
 | `packages/contracts` | Zod schemas for the canonical output contract (spec IX.4) |
 | `packages/reporters` | Export formats: SARIF · CycloneDX SBOM · JUnit XML · CSV (spec IX.3) |
 | `fixtures` | Golden test corpus: intentionally-vulnerable toy projects (spec X.3) |

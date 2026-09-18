@@ -34,6 +34,7 @@ function rowToRecord(row: Record<string, unknown>): ScanRecord {
   };
   const rec: ScanRecord = {
     scanId: String(row.scan_id),
+    orgId: String(row.org_id ?? 'default'),
     projectId: String(row.project_id),
     state: row.state as JobState,
     progress,
@@ -56,10 +57,11 @@ export class PostgresScanStore implements ScanStore {
   async create(rec: ScanRecord): Promise<void> {
     await this.pool.query(
       `INSERT INTO scan_job
-         (scan_id, project_id, state, stage, completed_stages, total_stages, pct, result, error, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+         (scan_id, org_id, project_id, state, stage, completed_stages, total_stages, pct, result, error, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [
         rec.scanId,
+        rec.orgId,
         rec.projectId,
         rec.state,
         rec.progress.stage,

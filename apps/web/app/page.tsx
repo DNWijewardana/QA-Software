@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { API_BASE } from './lib/api';
+import { API_BASE, authHeaders } from './lib/api';
 import type { ScanSummary, TargetRoot } from './lib/types';
 import { SubmitForm } from './components/SubmitForm';
 import { DecisionBadge } from './components/Badges';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 async function getJson<T>(pathname: string, fallback: T): Promise<{ data: T; ok: boolean }> {
   try {
-    const res = await fetch(`${API_BASE}${pathname}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}${pathname}`, { cache: 'no-store', headers: authHeaders() });
     if (!res.ok) return { data: fallback, ok: false };
     return { data: (await res.json()) as T, ok: true };
   } catch {

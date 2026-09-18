@@ -13,6 +13,17 @@ Whenever results are structured, the platform emits **both**:
 Versioned (`/api/v1`), with validation · pagination (cursor) · filtering · sorting · consistent errors ·
 authorization · rate limiting · idempotency keys.
 
+### Authentication & multi-tenancy (§VIII.8) — implemented
+
+API-key auth: requests carry `Authorization: Bearer <key>` (or `x-api-key`). A key maps to a principal
+`{orgId, role}`. Auth is **opt-in**: enforced when keys are configured (`QA_API_KEYS`, a JSON array of
+`{key, orgId, role, keyId}`), otherwise the API runs open in single-tenant dev mode. Keys are compared in
+constant time and never logged. **RBAC:** only Owner/Admin/QAManager/SecurityAnalyst/Developer may submit
+scans (write); any authenticated role may read. **Tenant isolation:** every scan record is scoped to one
+`orgId`; a principal may only read/list records in its own org, and a cross-org record is reported as `404`
+(never disclosed) — this is a first-class, tested security control (`tests/auth.test.ts`). `GET /health`
+is public.
+
 | Resource | Endpoints (representative) |
 |---|---|
 | Auth | `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` |

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { API_BASE } from '@/app/lib/api';
+import { API_BASE, authHeaders } from '@/app/lib/api';
 import type { ScanSummary } from '@/app/lib/types';
 import { ScanLive } from '@/app/components/ScanLive';
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 async function getInitial(id: string): Promise<ScanSummary | null> {
   try {
-    const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(id)}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(id)}`, { cache: 'no-store', headers: authHeaders() });
     if (!res.ok) return null;
     return (await res.json()) as ScanSummary;
   } catch {

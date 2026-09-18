@@ -10,6 +10,7 @@
 export const SCAN_TABLE_DDL = `
 CREATE TABLE IF NOT EXISTS scan_job (
   scan_id       TEXT PRIMARY KEY,
+  org_id        TEXT NOT NULL DEFAULT 'default',
   project_id    TEXT NOT NULL,
   state         TEXT NOT NULL,
   stage         TEXT NOT NULL,
@@ -28,4 +29,5 @@ CREATE TABLE IF NOT EXISTS scan_job (
 );
 
 CREATE INDEX IF NOT EXISTS scan_job_project_idx ON scan_job (project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS scan_job_org_idx ON scan_job (org_id, created_at DESC);
 `;

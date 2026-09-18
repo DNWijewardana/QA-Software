@@ -18,6 +18,7 @@ function makeStore(): PostgresScanStore {
 function record(id: string, createdAt: string): ScanRecord {
   return {
     scanId: id,
+    orgId: 'default',
     projectId: 'p1',
     state: 'QUEUED',
     progress: { stage: 'QUEUED', completedStages: 0, totalStages: 6, pct: 0 },

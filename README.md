@@ -38,6 +38,11 @@ npm run web                                # Next.js UI on :3000 (proxies to the
 
 The web UI needs the API running (`npm run api` in another terminal; set `QA_API_URL` to point elsewhere).
 
+**Authentication & multi-tenancy** (opt-in): set `QA_API_KEYS` to a JSON array of
+`[{"key":"...","orgId":"...","role":"Developer","keyId":"..."}]` to enforce API-key auth, RBAC, and
+per-org (tenant) isolation. Point the web at a key with `QA_API_KEY`. With no keys, the API runs open in
+single-tenant dev mode.
+
 **Distributed deployment** (API + worker as separate processes over Redis + PostgreSQL):
 
 ```bash

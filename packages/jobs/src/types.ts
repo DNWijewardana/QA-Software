@@ -22,6 +22,8 @@ export interface ScanProgress {
 
 export interface ScanRecord {
   scanId: string;
+  /** Owning organization/tenant (§VIII.8). Every record is scoped to exactly one org. */
+  orgId: string;
   projectId: string;
   state: JobState;
   progress: ScanProgress;

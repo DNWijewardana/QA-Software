@@ -54,8 +54,8 @@ describe('InMemoryScanStore', () => {
   it('creates, updates, and lists newest-first', async () => {
     const store = new InMemoryScanStore();
     const base = { progress: { stage: 'QUEUED' as const, completedStages: 0, totalStages: 6, pct: 0 } };
-    await store.create({ scanId: 's1', projectId: 'p', state: 'QUEUED', createdAt: '2020-01-01', updatedAt: '2020-01-01', ...base });
-    await store.create({ scanId: 's2', projectId: 'p', state: 'QUEUED', createdAt: '2020-01-02', updatedAt: '2020-01-02', ...base });
+    await store.create({ scanId: 's1', orgId: 'default', projectId: 'p', state: 'QUEUED', createdAt: '2020-01-01', updatedAt: '2020-01-01', ...base });
+    await store.create({ scanId: 's2', orgId: 'default', projectId: 'p', state: 'QUEUED', createdAt: '2020-01-02', updatedAt: '2020-01-02', ...base });
     const updated = await store.update('s1', { state: 'COMPLETED' });
     expect(updated.state).toBe('COMPLETED');
     const list = await store.list('p');

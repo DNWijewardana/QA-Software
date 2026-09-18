@@ -32,6 +32,7 @@ import {
   type ScanStore,
 } from '@qa/jobs';
 import { resolveWithinAllowedRoots } from './security.js';
+import { authenticate, canSubmitScan, type ApiKeyConfig, type Principal } from './auth.js';
 
 export interface ApiConfig {
   /** absolute directories a scan target must live under (§VIII.5). */
@@ -47,6 +48,12 @@ export interface ApiConfig {
    * deployment, and false when a queue is injected (the worker runs as a separate process — apps/worker).
    */
   embedWorker?: boolean;
+  /**
+   * API keys for authentication + multi-tenancy (§VIII.8). When non-empty, auth is ENFORCED and every
+   * request must present a valid key; records are isolated per org. When empty/undefined the API runs open
+   * (single-tenant dev mode) and all records use org 'default'.
+   */
+  apiKeys?: ApiKeyConfig[];
 }
 
 export interface ApiHandle {
@@ -84,6 +91,16 @@ export function createApiServer(config: ApiConfig): ApiHandle {
   const embedWorker = config.embedWorker ?? config.queue === undefined;
   if (embedWorker) startWorker(store, queue, { environment: 'api-embedded-worker' });
 
+  const apiKeys = config.apiKeys ?? [];
+  const authEnabled = apiKeys.length > 0;
+  const OPEN_PRINCIPAL: Principal = { orgId: 'default', role: 'Owner', keyId: 'open' };
+
+  /** Resolve the caller's principal, or null (caller unauthenticated when auth is enabled). */
+  const resolvePrincipal = (req: http.IncomingMessage): Principal | null => {
+    if (!authEnabled) return OPEN_PRINCIPAL;
+    return authenticate(req, apiKeys);
+  };
+
   const server = http.createServer((req, res) => {
     handle(req, res).catch((err) => {
       json(res, 500, { error: 'internal_error', message: err instanceof Error ? err.message : String(err) });
@@ -95,9 +112,16 @@ export function createApiServer(config: ApiConfig): ApiHandle {
     const parts = url.pathname.split('/').filter(Boolean);
     const method = req.method ?? 'GET';
 
-    // GET /health
+    // GET /health — public (no auth) so load balancers can probe it.
     if (method === 'GET' && url.pathname === '/health') {
-      return json(res, 200, { status: 'ok', mode: 'SAFE_STATIC', queueDepth: await queue.size() });
+      return json(res, 200, { status: 'ok', mode: 'SAFE_STATIC', authEnabled, queueDepth: await queue.size() });
+    }
+
+    // All other routes require authentication when auth is enabled (§VIII.8).
+    const principal = resolvePrincipal(req);
+    if (!principal) {
+      res.setHeader('www-authenticate', 'Bearer');
+      return json(res, 401, { error: 'unauthorized', message: 'A valid API key is required (Authorization: Bearer <key>).' });
     }
 
     // GET /targets  (candidate scan projects = immediate subdirs of each allowed root)
@@ -120,15 +144,19 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       return json(res, 200, roots);
     }
 
-    // GET /scans  (list)
+    // GET /scans  (list — scoped to the caller's org)
     if (method === 'GET' && parts.length === 1 && parts[0] === 'scans') {
       const projectId = url.searchParams.get('projectId') ?? undefined;
       const records = await service.list(projectId);
-      return json(res, 200, records.map(summarize));
+      const scoped = records.filter((r) => r.orgId === principal.orgId);
+      return json(res, 200, scoped.map(summarize));
     }
 
-    // POST /projects/:projectId/scans
+    // POST /projects/:projectId/scans  (write — RBAC gated)
     if (method === 'POST' && parts.length === 3 && parts[0] === 'projects' && parts[2] === 'scans') {
+      if (!canSubmitScan(principal.role)) {
+        return json(res, 403, { error: 'forbidden', message: `Role '${principal.role}' may not submit scans.` });
+      }
       const projectId = decodeURIComponent(parts[1]!);
       let body: Record<string, unknown>;
       try {
@@ -146,6 +174,7 @@ export function createApiServer(config: ApiConfig): ApiHandle {
         projectId,
         projectDir: check.resolved,
         evidenceRoot: config.evidenceRoot,
+        orgId: principal.orgId,
       });
       res.setHeader('location', `/scans/${record.scanId}`);
       return json(res, 202, summarize(record));
@@ -155,7 +184,10 @@ export function createApiServer(config: ApiConfig): ApiHandle {
     if (parts.length >= 2 && parts[0] === 'scans') {
       const scanId = decodeURIComponent(parts[1]!);
       const record = await service.get(scanId);
-      if (!record) return json(res, 404, { error: 'not_found', message: `scan ${scanId} not found` });
+      // Tenant isolation (§VIII.8): a record in another org is reported as not-found, never disclosed.
+      if (!record || record.orgId !== principal.orgId) {
+        return json(res, 404, { error: 'not_found', message: `scan ${scanId} not found` });
+      }
 
       // GET /scans/:scanId
       if (method === 'GET' && parts.length === 2) return json(res, 200, summarize(record));

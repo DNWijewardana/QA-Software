@@ -13,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { JobQueue, ScanJobPayload, ScanStore } from '@qa/jobs';
 import { createApiServer } from './server.js';
+import { parseApiKeys } from './auth.js';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
 const port = Number(process.env.QA_PORT ?? 4000);
@@ -43,11 +44,17 @@ async function main(): Promise<void> {
     mode = 'distributed (Postgres + BullMQ; worker is a separate process)';
   }
 
-  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue });
+  const apiKeys = parseApiKeys(process.env.QA_API_KEYS);
+  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue, apiKeys });
 
   server.listen(port, () => {
     console.error(`[qa-api] listening on http://localhost:${port} (SAFE_STATIC)`);
     console.error(`[qa-api] deployment: ${mode}`);
+    console.error(
+      apiKeys.length > 0
+        ? `[qa-api] auth: ENABLED (${apiKeys.length} key(s), multi-tenant)`
+        : '[qa-api] auth: DISABLED (open single-tenant dev mode; set QA_API_KEYS to enable)',
+    );
     console.error(`[qa-api] allowed scan roots: ${allowedRoots.join(', ')}`);
     console.error(`[qa-api] evidence root: ${evidenceRoot}`);
   });

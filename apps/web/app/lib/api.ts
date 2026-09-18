@@ -4,10 +4,20 @@
  */
 export const API_BASE = process.env.QA_API_URL ?? 'http://localhost:4000';
 
+/** Server-side API key (never exposed to the browser). Set when the API has auth enabled. */
+const API_KEY = process.env.QA_API_KEY;
+
+/** Auth headers for server-side calls to the API (empty when no key is configured). */
+export function authHeaders(): Record<string, string> {
+  return API_KEY ? { authorization: `Bearer ${API_KEY}` } : {};
+}
+
 /** Proxy a text response from the API, preserving status + content-type. Never throws. */
 export async function proxy(pathname: string, init?: RequestInit): Promise<Response> {
   try {
-    const r = await fetch(`${API_BASE}${pathname}`, { cache: 'no-store', ...init });
+    const headers = new Headers(init?.headers);
+    if (API_KEY) headers.set('authorization', `Bearer ${API_KEY}`);
+    const r = await fetch(`${API_BASE}${pathname}`, { cache: 'no-store', ...init, headers });
     const body = await r.text();
     return new Response(body, {
       status: r.status,

@@ -15,6 +15,8 @@ export interface SubmitScanInput {
   projectDir: string;
   /** base directory under which per-scan evidence is written. */
   evidenceRoot: string;
+  /** owning org/tenant (§VIII.8). Defaults to 'default' when auth is not enabled. */
+  orgId?: string;
 }
 
 export class ScanService {
@@ -28,6 +30,7 @@ export class ScanService {
     const now = new Date().toISOString();
     const record: ScanRecord = {
       scanId,
+      orgId: input.orgId ?? 'default',
       projectId: input.projectId,
       state: 'QUEUED',
       progress: QUEUED_PROGRESS,

@@ -62,6 +62,26 @@ The CLI (`npm run scan -- <dir>`) drives the same orchestrator the worker will h
 18/18 tests pass, seeded defects detected, no secret leaked to disk, NO_GO on the vulnerable fixture.
 The web/api/worker are the **delivery layer** around this proven core, scheduled next.
 
+## Phase 3 — Productionization (structural)
+
+| Step | Deliverable | Status |
+|---|---|---|
+| 3.1 | API authentication (API keys) + RBAC + **tenant isolation** (§VIII.8) | ✅ |
+| 3.2 | Sandboxed execution of untrusted code (§VIII.5) — for dynamic engines | ☐ |
+| 3.3 | Dynamic testing (authorized target): live security/perf/a11y-axe/API-contract | ☐ |
+| 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
+| 3.5 | PDF/HTML report rendering; notifications/webhooks; SCM integrations | ☐ |
+
+**3.1 result (auth + multi-tenancy):** the API supports opt-in API-key authentication (enforced when
+`apiKeys`/`QA_API_KEYS` are configured; open single-tenant dev mode otherwise). Keys map to a principal
+`{orgId, role}`; keys are compared in constant time and never logged. RBAC gates writes (only
+Owner/Admin/QAManager/SecurityAnalyst/Developer may submit scans — a Viewer gets 403). **Tenant isolation
+(§VIII.8) is enforced and tested as a first-class control:** scan records carry an `orgId` (in-memory + a new
+Postgres `org_id` column), and every read/list is org-scoped so org B is told a scan in org A "does not
+exist" (404, never disclosed). `tests/auth.test.ts` verifies 401 (no/invalid key), 403 (Viewer submit), and
+cross-org isolation on the record, its sub-resources, and the list. The web proxy attaches a server-side
+`QA_API_KEY` (never exposed to the browser).
+
 ## Phase 2 — Breadth (spec XI.3 step 16)
 
 Add engines incrementally, each behind the plugin interface, each with golden-corpus fixtures,

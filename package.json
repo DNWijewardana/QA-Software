@@ -11,6 +11,7 @@
     "packages/orchestrator",
     "packages/reporters",
     "packages/jobs",
+    "packages/benchmark",
     "apps/cli",
     "apps/api",
     "apps/worker",
@@ -23,7 +24,8 @@
     "scan": "tsx apps/cli/src/index.ts",
     "api": "tsx apps/api/src/main.ts",
     "worker": "tsx apps/worker/src/main.ts",
-    "web": "npm -w @qa/web run dev"
+    "web": "npm -w @qa/web run dev",
+    "benchmark": "tsx packages/benchmark/src/cli.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

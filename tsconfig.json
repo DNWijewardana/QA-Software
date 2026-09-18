@@ -10,7 +10,8 @@
       "@qa/orchestrator": ["packages/orchestrator/src/index.ts"],
       "@qa/reporters": ["packages/reporters/src/index.ts"],
       "@qa/jobs": ["packages/jobs/src/index.ts"],
-      "@qa/jobs/adapters": ["packages/jobs/src/adapters/index.ts"]
+      "@qa/jobs/adapters": ["packages/jobs/src/adapters/index.ts"],
+      "@qa/benchmark": ["packages/benchmark/src/index.ts"]
     }
   },
   "include": [

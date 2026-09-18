@@ -34,6 +34,7 @@ npm run scan -- fixtures/vulnerable-sample # one-shot CLI scan (dual output + ex
 npm run worker -- fixtures/vulnerable-sample   # async worker demo (in-memory)
 npm run api                                # HTTP API on :4000 (SAFE_STATIC, path-guarded)
 npm run web                                # Next.js UI on :3000 (proxies to the API on :4000)
+npm run benchmark                          # detection-quality benchmark: recall of seeded defects (X.4 gate)
 ```
 
 The web UI needs the API running (`npm run api` in another terminal; set `QA_API_URL` to point elsewhere).
@@ -77,6 +78,7 @@ for evidence artifacts, optional search index for global search.
 | `packages/engines` | Pluggable engine adapters (`TestEngine`, `Scanner`, … — spec VI.2): profiler, secret-scanner, code-quality, dependency-scanner, dockerfile-scanner, kubernetes-scanner, compose-scanner, openapi-scanner, html-a11y-scanner, performance-scanner, logging-scanner, error-handling-scanner, privacy-scanner, cicd-scanner, sql-migration-scanner, config-docs-scanner, terraform-scanner, cloudformation-scanner, license-scanner, python-scanner, go-scanner, java-scanner; plus separate SEO analyzer |
 | `packages/contracts` | Zod schemas for the canonical output contract (spec IX.4) |
 | `packages/reporters` | Export formats: SARIF · CycloneDX SBOM · JUnit XML · CSV (spec IX.3) |
+| `packages/benchmark` | Detection-quality benchmark against the golden corpus (spec X.1/X.4) — recall gate |
 | `fixtures` | Golden test corpus: intentionally-vulnerable toy projects (spec X.3) |
 | `docs` | Design documents (spec XI.4) |
 

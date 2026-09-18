@@ -13,6 +13,7 @@ export default defineConfig({
       '@qa/reporters': r('./packages/reporters/src/index.ts'),
       '@qa/jobs/adapters': r('./packages/jobs/src/adapters/index.ts'),
       '@qa/jobs': r('./packages/jobs/src/index.ts'),
+      '@qa/benchmark': r('./packages/benchmark/src/index.ts'),
     },
   },
   test: {

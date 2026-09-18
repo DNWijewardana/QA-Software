@@ -11,7 +11,7 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { toCsv, toCycloneDx, toJUnit, toSarif } from '@qa/reporters';
+import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import { newScanId, renderHumanReport, runScan } from '@qa/orchestrator';
 
 interface Args {
@@ -72,6 +72,7 @@ async function main(): Promise<void> {
   await fs.writeFile(path.join(scanOut, 'result.sarif'), toSarif(result), 'utf8');
   await fs.writeFile(path.join(scanOut, 'result.junit.xml'), toJUnit(result), 'utf8');
   await fs.writeFile(path.join(scanOut, 'findings.csv'), toCsv(result), 'utf8');
+  await fs.writeFile(path.join(scanOut, 'report.html'), toHtml(result), 'utf8');
   if (result.sbom) {
     await fs.writeFile(path.join(scanOut, 'sbom.cdx.json'), toCycloneDx(result.sbom, scanId), 'utf8');
   }
@@ -86,6 +87,7 @@ async function main(): Promise<void> {
     console.error(`[qa-scan] SARIF:         ${path.join(scanOut, 'result.sarif')}`);
     console.error(`[qa-scan] JUnit XML:     ${path.join(scanOut, 'result.junit.xml')}`);
     console.error(`[qa-scan] CSV:           ${path.join(scanOut, 'findings.csv')}`);
+    console.error(`[qa-scan] HTML report:   ${path.join(scanOut, 'report.html')}`);
     if (result.sbom) console.error(`[qa-scan] SBOM (CycloneDX): ${path.join(scanOut, 'sbom.cdx.json')}`);
     console.error(`[qa-scan] Evidence dir:  ${evidenceDir}`);
   } else {

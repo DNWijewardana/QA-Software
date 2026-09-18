@@ -14,14 +14,14 @@
  *   GET  /scans/:scanId                   job status + honest stage progress (no fake %)
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
  *   GET  /scans/:scanId/findings          filter ?severity=&status=
- *   GET  /scans/:scanId/report?format=human|json|sarif|junit|csv|cyclonedx
+ *   GET  /scans/:scanId/report?format=human|html|json|sarif|junit|csv|cyclonedx
  */
 
 import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { renderHumanReport } from '@qa/orchestrator';
-import { toCsv, toCycloneDx, toJUnit, toSarif } from '@qa/reporters';
+import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import {
   InMemoryAuditStore,
   InMemoryJobQueue,
@@ -263,6 +263,8 @@ export function createApiServer(config: ApiConfig): ApiHandle {
             return json(res, 200, result);
           case 'human':
             return send(res, 200, renderHumanReport(result), 'text/markdown; charset=utf-8');
+          case 'html':
+            return send(res, 200, toHtml(result), 'text/html; charset=utf-8');
           case 'sarif':
             return send(res, 200, toSarif(result), 'application/json');
           case 'junit':

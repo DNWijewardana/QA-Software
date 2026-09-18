@@ -119,6 +119,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 |---|---|---|
 | 2.1 | Dependency/Supply-Chain engine + CycloneDX SBOM (`SupplyChainHealth` dim) | ✅ |
 | 2.2 | Export formats: SARIF · CycloneDX · JUnit XML · CSV (`packages/reporters`, IX.3) | ✅ |
+| 2.2b | Self-contained, printable HTML report (§IX.3; "Print to PDF" covers the PDF format) | ✅ |
 | 2.3 | Accessibility engine (axe-core adapter) — needs browser/DOM | ☐ |
 | 2.4 | API contract testing (OpenAPI drift) | ☐ |
 | 2.5 | Async delivery core `packages/jobs` (`JobQueue`/`ScanStore`/`ScanService`) + `apps/worker` | ✅ (in-memory adapter; BullMQ/Postgres next) |
@@ -155,6 +156,14 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 missing lockfile + unpinned versions; it is HONEST that offline vulnerability status is `NOT_TESTED`
 (no CVE/OSV DB), never a false "clean". `packages/reporters` emits SARIF 2.1.0 (CI code-scanning),
 CycloneDX SBOM, JUnit XML, and CSV.
+
+**2.2b result (HTML report):** `toHtml(result)` renders a single self-contained, styled, accessible HTML
+document (release decision, KPIs, dimension score meters, findings, compliance matrix, SBOM, SEO, manual
+review, limitations) with inline CSS, no external scripts/stylesheets, and a print stylesheet ("Print to
+PDF" is the PDF export path). Because findings/evidence come from UNTRUSTED scanned code, every dynamic
+value is HTML-escaped — `tests/html-report.test.ts` verifies a `<script>`/`onerror` payload in a finding is
+neutralised (no stored-XSS). Exposed via the CLI (`report.html`), the API (`?format=html`), and the web
+report links.
 
 **2.10 result (distributed deployment):** `@qa/jobs/adapters` ships REAL adapters — `BullMqJobQueue`
 (bullmq + ioredis) and `PostgresScanStore` (node-postgres), both implementing the same `JobQueue`/`ScanStore`

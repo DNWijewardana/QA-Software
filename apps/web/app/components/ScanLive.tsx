@@ -7,7 +7,7 @@ import { DecisionBadge } from './Badges';
 import { FindingsTable } from './FindingsTable';
 import { CompliancePanel, DimensionScores, LimitationsPanel, ManualReviewPanel, OverallPanel, SbomPanel, SeoPanel } from './QualityPanels';
 
-const REPORT_FORMATS = ['human', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance', 'seo'] as const;
+const REPORT_FORMATS = ['human', 'html', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance', 'seo'] as const;
 
 export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSummary | null }) {
   const [record, setRecord] = useState<ScanSummary | null>(initial);

@@ -67,6 +67,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 | Step | Deliverable | Status |
 |---|---|---|
 | 3.1 | API authentication (API keys) + RBAC + **tenant isolation** (§VIII.8) | ✅ |
+| 3.1b | Rate limiting (§VI.9) + tamper-evident hash-chained audit log (§VIII.7) | ✅ |
 | 3.2 | Sandboxed execution of untrusted code (§VIII.5) — for dynamic engines | ☐ |
 | 3.3 | Dynamic testing (authorized target): live security/perf/a11y-axe/API-contract | ☐ |
 | 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
@@ -81,6 +82,15 @@ Postgres `org_id` column), and every read/list is org-scoped so org B is told a 
 exist" (404, never disclosed). `tests/auth.test.ts` verifies 401 (no/invalid key), 403 (Viewer submit), and
 cross-org isolation on the record, its sub-resources, and the list. The web proxy attaches a server-side
 `QA_API_KEY` (never exposed to the browser).
+
+**3.1b result (rate limiting + audit):** the API applies a per-key fixed-window **rate limiter** (§VI.9,
+default 300/60s, configurable; returns `429` + `Retry-After` and `X-RateLimit-*` headers; keyed by API key
+when authenticated, else client IP). It also writes a **tamper-evident audit log** (§VIII.7): an append-only,
+**hash-chained** store where each event's hash covers the previous hash, so any mutation/deletion of an
+earlier event breaks the chain (detected by `verify()`). Audited events: `scan.submit`, cross-org
+`scan.access.denied`, and `auth.denied`. `GET /audit` is org-scoped and role-gated (Owner/Admin/Auditor/
+ComplianceOfficer) and returns the chain integrity status. `tests/audit-ratelimit.test.ts` covers the chain
++ tamper detection, the limiter, and the HTTP behaviour (audit records, role-gating, 429).
 
 ## Phase 2 — Breadth (spec XI.3 step 16)
 

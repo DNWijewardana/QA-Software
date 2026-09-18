@@ -8,3 +8,4 @@ export * from './queue.js';
 export * from './store.js';
 export * from './processor.js';
 export * from './service.js';
+export * from './audit.js';

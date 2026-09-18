@@ -33,7 +33,7 @@ is public.
 | Reports | `GET /scans/:id/report?format=json|human|sarif|cyclonedx|junit|csv` |
 | Suppressions | `GET/POST /projects/:id/suppressions` (scoped, expiring — VII.17) |
 | Baselines | `GET/POST /projects/:id/baselines`, diff at `GET /scans/:id/diff?base=…` |
-| Audit | `GET /orgs/:id/audit` (read-only, append-only source) |
+| Audit | `GET /audit` (org-scoped, role-gated; append-only hash-chained log + integrity status) |
 
 **Progress is real (spec VI.6):** the scan stream reports actual stage + completed engines + counts. No fake
 percentages; "estimated remaining" is shown only when reliably computable.

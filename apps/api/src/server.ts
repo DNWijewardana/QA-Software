@@ -23,16 +23,19 @@ import path from 'node:path';
 import { renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toJUnit, toSarif } from '@qa/reporters';
 import {
+  InMemoryAuditStore,
   InMemoryJobQueue,
   InMemoryScanStore,
   ScanService,
   startWorker,
+  type AuditStore,
   type JobQueue,
   type ScanJobPayload,
   type ScanStore,
 } from '@qa/jobs';
 import { resolveWithinAllowedRoots } from './security.js';
-import { authenticate, canSubmitScan, type ApiKeyConfig, type Principal } from './auth.js';
+import { authenticate, canSubmitScan, type ApiKeyConfig, type Principal, type Role } from './auth.js';
+import { RateLimiter } from './ratelimit.js';
 
 export interface ApiConfig {
   /** absolute directories a scan target must live under (§VIII.5). */
@@ -54,6 +57,10 @@ export interface ApiConfig {
    * (single-tenant dev mode) and all records use org 'default'.
    */
   apiKeys?: ApiKeyConfig[];
+  /** injected tamper-evident audit store (default in-memory) — §VIII.7. */
+  auditStore?: AuditStore;
+  /** per-key request budget (§VI.9). Default 300 requests / 60s. */
+  rateLimit?: { limit: number; windowMs: number };
 }
 
 export interface ApiHandle {
@@ -61,6 +68,7 @@ export interface ApiHandle {
   service: ScanService;
   store: ScanStore;
   queue: JobQueue<ScanJobPayload>;
+  auditStore: AuditStore;
 }
 
 function send(res: http.ServerResponse, status: number, body: string, contentType: string): void {
@@ -94,12 +102,16 @@ export function createApiServer(config: ApiConfig): ApiHandle {
   const apiKeys = config.apiKeys ?? [];
   const authEnabled = apiKeys.length > 0;
   const OPEN_PRINCIPAL: Principal = { orgId: 'default', role: 'Owner', keyId: 'open' };
+  const audit = config.auditStore ?? new InMemoryAuditStore();
+  const limiter = new RateLimiter(config.rateLimit?.limit ?? 300, config.rateLimit?.windowMs ?? 60_000);
+  const AUDIT_ROLES = new Set<Role>(['Owner', 'Admin', 'Auditor', 'ComplianceOfficer']);
 
   /** Resolve the caller's principal, or null (caller unauthenticated when auth is enabled). */
   const resolvePrincipal = (req: http.IncomingMessage): Principal | null => {
     if (!authEnabled) return OPEN_PRINCIPAL;
     return authenticate(req, apiKeys);
   };
+  const clientIp = (req: http.IncomingMessage): string => req.socket.remoteAddress ?? 'unknown';
 
   const server = http.createServer((req, res) => {
     handle(req, res).catch((err) => {
@@ -117,9 +129,20 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       return json(res, 200, { status: 'ok', mode: 'SAFE_STATIC', authEnabled, queueDepth: await queue.size() });
     }
 
-    // All other routes require authentication when auth is enabled (§VIII.8).
     const principal = resolvePrincipal(req);
+
+    // Rate limiting (§VI.9): per key when authenticated, else per client IP.
+    const rl = limiter.check(principal ? principal.keyId : `ip:${clientIp(req)}`);
+    res.setHeader('x-ratelimit-limit', String(rl.limit));
+    res.setHeader('x-ratelimit-remaining', String(rl.remaining));
+    if (!rl.allowed) {
+      res.setHeader('retry-after', String(Math.ceil(rl.resetMs / 1000)));
+      return json(res, 429, { error: 'rate_limited', message: 'Rate limit exceeded; retry later.' });
+    }
+
+    // All other routes require authentication when auth is enabled (§VIII.8).
     if (!principal) {
+      await audit.append({ orgId: 'unknown', actor: `ip:${clientIp(req)}`, action: 'auth.denied', target: url.pathname });
       res.setHeader('www-authenticate', 'Bearer');
       return json(res, 401, { error: 'unauthorized', message: 'A valid API key is required (Authorization: Bearer <key>).' });
     }
@@ -142,6 +165,16 @@ export function createApiServer(config: ApiConfig): ApiHandle {
         }),
       );
       return json(res, 200, roots);
+    }
+
+    // GET /audit  (tamper-evident audit log, org-scoped, role-gated — §VIII.7)
+    if (method === 'GET' && url.pathname === '/audit') {
+      if (!AUDIT_ROLES.has(principal.role)) {
+        return json(res, 403, { error: 'forbidden', message: `Role '${principal.role}' may not read the audit log.` });
+      }
+      const events = await audit.list(principal.orgId, 200);
+      const integrity = await audit.verify();
+      return json(res, 200, { integrity, events });
     }
 
     // GET /scans  (list — scoped to the caller's org)
@@ -176,6 +209,7 @@ export function createApiServer(config: ApiConfig): ApiHandle {
         evidenceRoot: config.evidenceRoot,
         orgId: principal.orgId,
       });
+      await audit.append({ orgId: principal.orgId, actor: principal.keyId, action: 'scan.submit', target: record.scanId });
       res.setHeader('location', `/scans/${record.scanId}`);
       return json(res, 202, summarize(record));
     }
@@ -186,6 +220,10 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       const record = await service.get(scanId);
       // Tenant isolation (§VIII.8): a record in another org is reported as not-found, never disclosed.
       if (!record || record.orgId !== principal.orgId) {
+        if (record && record.orgId !== principal.orgId) {
+          // A cross-org access attempt is a security-relevant event — audit it.
+          await audit.append({ orgId: principal.orgId, actor: principal.keyId, action: 'scan.access.denied', target: scanId });
+        }
         return json(res, 404, { error: 'not_found', message: `scan ${scanId} not found` });
       }
 
@@ -249,7 +287,7 @@ export function createApiServer(config: ApiConfig): ApiHandle {
     return json(res, 404, { error: 'not_found', message: `no route for ${method} ${url.pathname}` });
   }
 
-  return { server, service, store, queue };
+  return { server, service, store, queue, auditStore: audit };
 }
 
 /** Summarize a record for status endpoints (omits the heavy result payload). */

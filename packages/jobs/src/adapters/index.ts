@@ -5,5 +5,6 @@
 
 export * from './postgres-schema.js';
 export * from './postgres-store.js';
+export * from './postgres-audit.js';
 export * from './bullmq-queue.js';
 export * from './factory.js';

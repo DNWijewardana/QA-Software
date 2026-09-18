@@ -11,7 +11,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { JobQueue, ScanJobPayload, ScanStore } from '@qa/jobs';
+import type { AuditStore, JobQueue, ScanJobPayload, ScanStore } from '@qa/jobs';
 import { createApiServer } from './server.js';
 import { parseApiKeys } from './auth.js';
 
@@ -34,18 +34,20 @@ async function main(): Promise<void> {
 
   let store: ScanStore | undefined;
   let queue: JobQueue<ScanJobPayload> | undefined;
+  let auditStore: AuditStore | undefined;
   let mode = 'single-process (in-memory)';
 
   if (redisUrl && dbUrl) {
-    const { BullMqJobQueue, createPostgresStore } = await import('@qa/jobs/adapters');
-    const pg = await createPostgresStore(dbUrl);
+    const { BullMqJobQueue, createPostgresBackends } = await import('@qa/jobs/adapters');
+    const pg = await createPostgresBackends(dbUrl);
     store = pg.store;
+    auditStore = pg.auditStore;
     queue = new BullMqJobQueue<ScanJobPayload>({ redisUrl, queueName: 'qa-scans' });
     mode = 'distributed (Postgres + BullMQ; worker is a separate process)';
   }
 
   const apiKeys = parseApiKeys(process.env.QA_API_KEYS);
-  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue, apiKeys });
+  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue, auditStore, apiKeys });
 
   server.listen(port, () => {
     console.error(`[qa-api] listening on http://localhost:${port} (SAFE_STATIC)`);

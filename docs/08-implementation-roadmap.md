@@ -68,6 +68,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 |---|---|---|
 | 3.1 | API authentication (API keys) + RBAC + **tenant isolation** (§VIII.8) | ✅ |
 | 3.1b | Rate limiting (§VI.9) + tamper-evident hash-chained audit log (§VIII.7) | ✅ |
+| 3.1c | Durable PostgreSQL audit adapter (append-only, hash-chained) | ✅ |
 | 3.2 | Sandboxed execution of untrusted code (§VIII.5) — for dynamic engines | ☐ |
 | 3.3 | Dynamic testing (authorized target): live security/perf/a11y-axe/API-contract | ☐ |
 | 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
@@ -91,6 +92,13 @@ earlier event breaks the chain (detected by `verify()`). Audited events: `scan.s
 `scan.access.denied`, and `auth.denied`. `GET /audit` is org-scoped and role-gated (Owner/Admin/Auditor/
 ComplianceOfficer) and returns the chain integrity status. `tests/audit-ratelimit.test.ts` covers the chain
 + tamper detection, the limiter, and the HTTP behaviour (audit records, role-gating, 429).
+
+**3.1c result (durable audit):** `PostgresAuditStore` implements the same `AuditStore` interface on an
+append-only `audit_event` table (a monotonic `seq` orders the chain; each row carries `prev_hash`/`hash`).
+It only ever INSERTs — production revokes UPDATE/DELETE on the table so the chain cannot be silently
+rewritten. `createPostgresBackends()` provisions the scan store + audit store on one shared pool, and the API
+uses it in distributed mode. `tests/postgres-audit.test.ts` runs the real SQL via pg-mem: chain verifies,
+listing is org-scoped, and a simulated `UPDATE` is detected by `verify()`.
 
 ## Phase 2 — Breadth (spec XI.3 step 16)
 

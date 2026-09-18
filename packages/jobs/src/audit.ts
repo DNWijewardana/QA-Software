@@ -36,7 +36,8 @@ export interface AuditStore {
   verify(): Promise<{ ok: boolean; brokenAt?: string }>;
 }
 
-const GENESIS = '0'.repeat(64);
+export const AUDIT_GENESIS = '0'.repeat(64);
+const GENESIS = AUDIT_GENESIS;
 
 export class InMemoryAuditStore implements AuditStore {
   private readonly events: AuditEvent[] = [];

@@ -3,19 +3,21 @@
  * qa-scan — CLI driver for the SAFE_STATIC vertical slice.
  *
  * Usage:
- *   npm run scan -- <projectDir> [--out <dir>] [--json-only]
+ *   npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only]
  *
- * Emits BOTH the canonical JSON contract (§IX.4) and a human report (§IX.1) — dual output (Rule 36).
- * Runs ONLY in SAFE_STATIC mode: reads files, executes nothing (§VIII.1).
+ * The target may be a local directory OR a public https git URL (shallow-cloned to a temp dir, scanned,
+ * then removed). Emits BOTH the canonical JSON contract (§IX.4) and a human report (§IX.1) — dual output
+ * (Rule 36). Runs ONLY in SAFE_STATIC mode: reads files, executes nothing (§VIII.1).
  */
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
-import { newScanId, renderHumanReport, runScan } from '@qa/orchestrator';
+import { isRemoteTarget, newScanId, prepareSource, renderHumanReport, runScan } from '@qa/orchestrator';
 
 interface Args {
-  projectDir: string;
+  /** Raw target: a local path OR an https git URL (resolved later by prepareSource). */
+  target: string;
   outDir: string;
   jsonOnly: boolean;
 }
@@ -30,13 +32,13 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--json-only') jsonOnly = true;
     else positional.push(a);
   }
-  const projectDir = positional[0];
-  if (!projectDir) {
-    console.error('Usage: npm run scan -- <projectDir> [--out <dir>] [--json-only]');
+  const target = positional[0];
+  if (!target) {
+    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only]');
     process.exit(2);
   }
   return {
-    projectDir: path.resolve(projectDir),
+    target: isRemoteTarget(target) ? target : path.resolve(target),
     outDir: outDir ? path.resolve(outDir) : path.resolve('data', 'scans'),
     jsonOnly,
   };
@@ -45,9 +47,13 @@ function parseArgs(argv: string[]): Args {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
-  const stat = await fs.stat(args.projectDir).catch(() => null);
-  if (!stat?.isDirectory()) {
-    console.error(`Not a directory: ${args.projectDir}`);
+  // Resolve the target into a readable directory — cloning a remote repo to a temp dir if needed.
+  let source;
+  try {
+    if (isRemoteTarget(args.target)) console.error(`[qa-scan] Cloning ${args.target} …`);
+    source = await prepareSource(args.target);
+  } catch (err) {
+    console.error(`[qa-scan] Cannot read target: ${err instanceof Error ? err.message : err}`);
     process.exit(2);
   }
 
@@ -55,14 +61,19 @@ async function main(): Promise<void> {
   const scanOut = path.join(args.outDir, scanId);
   const evidenceDir = path.join(scanOut, 'evidence');
 
-  console.error(`[qa-scan] Mode: SAFE_STATIC  Target: ${args.projectDir}`);
-  const result = await runScan({
-    projectDir: args.projectDir,
-    scanId,
-    evidenceDir,
-    environment: 'local-cli',
-    onStage: (s) => console.error(`[qa-scan] stage: ${s}`),
-  });
+  console.error(`[qa-scan] Mode: SAFE_STATIC  Target: ${source.origin.type}:${source.origin.ref}`);
+  let result;
+  try {
+    result = await runScan({
+      projectDir: source.dir,
+      scanId,
+      evidenceDir,
+      environment: 'local-cli',
+      onStage: (s) => console.error(`[qa-scan] stage: ${s}`),
+    });
+  } finally {
+    await source.cleanup(); // always remove any temp clone
+  }
 
   await fs.mkdir(scanOut, { recursive: true });
   const jsonPath = path.join(scanOut, 'result.json');

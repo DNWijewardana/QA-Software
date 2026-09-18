@@ -29,8 +29,9 @@ See [`docs/08-implementation-roadmap.md`](./docs/08-implementation-roadmap.md) f
 
 ```bash
 npm install
-npm test                                   # 100 tests (BullMQ test auto-skips without Redis)
-npm run scan -- fixtures/vulnerable-sample # one-shot CLI scan (dual output + exports)
+npm test                                   # 109 tests (BullMQ test auto-skips without Redis)
+npm run scan -- fixtures/vulnerable-sample # one-shot CLI scan of a local dir (dual output + exports)
+npm run scan -- https://github.com/OWNER/REPO.git  # …or scan a public repo straight from a git URL
 npm run worker -- fixtures/vulnerable-sample   # async worker demo (in-memory)
 npm run api                                # HTTP API on :4000 (SAFE_STATIC, path-guarded)
 npm run web                                # Next.js UI on :3000 (proxies to the API on :4000)

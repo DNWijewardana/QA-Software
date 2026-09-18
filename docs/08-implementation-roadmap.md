@@ -120,6 +120,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.1 | Dependency/Supply-Chain engine + CycloneDX SBOM (`SupplyChainHealth` dim) | ✅ |
 | 2.2 | Export formats: SARIF · CycloneDX · JUnit XML · CSV (`packages/reporters`, IX.3) | ✅ |
 | 2.2b | Self-contained, printable HTML report (§IX.3; "Print to PDF" covers the PDF format) | ✅ |
+| 2.2c | Remote source ingestion — scan a public https git URL (shallow clone → scan → cleanup) | ✅ |
 | 2.3 | Accessibility engine (axe-core adapter) — needs browser/DOM | ☐ |
 | 2.4 | API contract testing (OpenAPI drift) | ☐ |
 | 2.5 | Async delivery core `packages/jobs` (`JobQueue`/`ScanStore`/`ScanService`) + `apps/worker` | ✅ (in-memory adapter; BullMQ/Postgres next) |
@@ -164,6 +165,15 @@ PDF" is the PDF export path). Because findings/evidence come from UNTRUSTED scan
 value is HTML-escaped — `tests/html-report.test.ts` verifies a `<script>`/`onerror` payload in a finding is
 neutralised (no stored-XSS). Exposed via the CLI (`report.html`), the API (`?format=html`), and the web
 report links.
+
+**2.2c result (remote source ingestion):** `@qa/orchestrator/ingest` resolves a scan *target* that is a
+local directory OR a git URL. Remote targets are shallow-cloned (`--depth 1 --single-branch --no-tags`,
+non-interactive, time-bounded) into a temp dir, scanned, then removed. SECURITY: the URL is passed to `git`
+as an argument (spawn, `shell:false` — no command injection); `assertAllowedRemote` (the policy for the
+untrusted API path) permits HTTPS only, forbids embedded credentials, and best-effort-blocks loopback/private/
+metadata hosts (SSRF); nothing in the repo is executed and submodules are not initialised. Wired into the
+CLI (`npm run scan -- https://github.com/OWNER/REPO.git`) and verified end-to-end against a live public repo.
+`tests/ingest.test.ts` covers the policy, `isRemoteTarget`, a hermetic `file://` clone, and prepare/cleanup.
 
 **2.10 result (distributed deployment):** `@qa/jobs/adapters` ships REAL adapters — `BullMqJobQueue`
 (bullmq + ioredis) and `PostgresScanStore` (node-postgres), both implementing the same `JobQueue`/`ScanStore`

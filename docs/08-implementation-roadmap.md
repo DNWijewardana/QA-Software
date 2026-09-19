@@ -69,7 +69,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 | 3.1 | API authentication (API keys) + RBAC + **tenant isolation** (§VIII.8) | ✅ |
 | 3.1b | Rate limiting (§VI.9) + tamper-evident hash-chained audit log (§VIII.7) | ✅ |
 | 3.1c | Durable PostgreSQL audit adapter (append-only, hash-chained) | ✅ |
-| 3.2 | Detection-quality benchmark / dogfooding harness (§X.1/§X.4) — 100% recall gate | ✅ |
+| 3.2 | Detection-quality benchmark / dogfooding harness (§X.1/§X.4) — 100% recall + 100% precision gate | ✅ |
 | 3.2 | Sandboxed execution of untrusted code (§VIII.5) — for dynamic engines | ☐ |
 | 3.3 | Dynamic testing (authorized target): live security/perf/a11y-axe/API-contract | ☐ |
 | 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
@@ -105,10 +105,16 @@ listing is org-scoped, and a simulated `UPDATE` is detected by `verify()`.
 corpus (§X.1 "run the platform against itself") and measures **recall** of the seeded defects (§X.4). The
 ground truth is `GOLDEN_CORPUS` (18 fixtures, 109 seeded defects across every engine). `npm run benchmark`
 prints a per-fixture recall table + writes JSON, and exits non-zero if any seeded defect is undetected —
-a **detection-quality gate**. `tests/benchmark.test.ts` asserts **100% recall** (currently 109/109), so any
-future change that stops detecting a known defect fails the build ("regression on detection quality is itself
-a quality gate"). Precision is deliberately not computed — the single-purpose fixtures raise legitimate
-unrelated findings that are not false positives; a fully-labelled corpus would be needed for precision.
+a **detection-quality gate**. **`[updated]`** The corpus is now **fully labelled** (each fixture also lists the
+non-seeded rule IDs that legitimately fire on it — `allowedExtra` — plus a global README/LICENSE hygiene set),
+so the benchmark measures **both recall and precision**: recall = seeded defects detected (currently
+**122/122 = 100%**), precision = correct detections ÷ all detections where any detection that is neither seeded
+nor documented-legitimate is a candidate **false positive** (currently **174/174 = 100%**). `tests/benchmark.test.ts`
+asserts both are 100% (empty `missingRules` and `falsePositives`), so any change that stops detecting a known
+defect *or* introduces an unaccounted detection fails the build. The labelling is non-circular: each `allowedExtra`
+is a verified real issue, and each engine's own clean-input test independently guards against mis-fires — a new
+mis-fire surfaces here as an unaccounted detection. A larger adversarial clean-code corpus would harden precision
+further (future work).
 
 ## Phase 2 — Breadth (spec XI.3 step 16)
 

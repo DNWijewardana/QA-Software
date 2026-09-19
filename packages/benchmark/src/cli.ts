@@ -25,8 +25,10 @@ async function main(): Promise<void> {
   await fs.writeFile(outPath, JSON.stringify(report, null, 2), 'utf8');
   console.error(`\n[benchmark] JSON: ${outPath}`);
 
-  // Detection-quality gate: fail if recall < 100%.
-  process.exit(report.totals.recall < 1 ? 1 : 0);
+  // Detection-quality gate: fail on any recall regression (undetected seeded defect) OR precision
+  // regression (an unaccounted detection). Both are quality gates (§X.4).
+  const pass = report.totals.recall >= 1 && report.totals.falsePositives.length === 0;
+  process.exit(pass ? 0 : 1);
 }
 
 main().catch((err) => {

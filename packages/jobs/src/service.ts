@@ -12,7 +12,10 @@ import { QUEUED_PROGRESS, type ScanJobPayload, type ScanRecord } from './types.j
 
 export interface SubmitScanInput {
   projectId: string;
-  projectDir: string;
+  /** Local directory to scan. Provide exactly one of projectDir / sourceUrl. */
+  projectDir?: string;
+  /** Public https git URL to clone and scan. Provide exactly one of projectDir / sourceUrl. */
+  sourceUrl?: string;
   /** base directory under which per-scan evidence is written. */
   evidenceRoot: string;
   /** owning org/tenant (§VIII.8). Defaults to 'default' when auth is not enabled. */
@@ -26,6 +29,9 @@ export class ScanService {
   ) {}
 
   async submit(input: SubmitScanInput): Promise<ScanRecord> {
+    if (!input.projectDir === !input.sourceUrl) {
+      throw new Error('submit requires exactly one of projectDir or sourceUrl');
+    }
     const scanId = newScanId();
     const now = new Date().toISOString();
     const record: ScanRecord = {
@@ -42,6 +48,7 @@ export class ScanService {
       scanId,
       projectId: input.projectId,
       projectDir: input.projectDir,
+      sourceUrl: input.sourceUrl,
       evidenceDir: path.join(input.evidenceRoot, scanId, 'evidence'),
     });
     return record;

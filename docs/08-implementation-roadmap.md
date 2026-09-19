@@ -121,6 +121,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.2 | Export formats: SARIF · CycloneDX · JUnit XML · CSV (`packages/reporters`, IX.3) | ✅ |
 | 2.2b | Self-contained, printable HTML report (§IX.3; "Print to PDF" covers the PDF format) | ✅ |
 | 2.2c | Remote source ingestion — scan a public https git URL (shallow clone → scan → cleanup) | ✅ |
+| 2.2d | Git-URL scanning wired through the API, worker, and web UI (not just the CLI) | ✅ |
 | 2.3 | Accessibility engine (axe-core adapter) — needs browser/DOM | ☐ |
 | 2.4 | API contract testing (OpenAPI drift) | ☐ |
 | 2.5 | Async delivery core `packages/jobs` (`JobQueue`/`ScanStore`/`ScanService`) + `apps/worker` | ✅ (in-memory adapter; BullMQ/Postgres next) |
@@ -174,6 +175,16 @@ untrusted API path) permits HTTPS only, forbids embedded credentials, and best-e
 metadata hosts (SSRF); nothing in the repo is executed and submodules are not initialised. Wired into the
 CLI (`npm run scan -- https://github.com/OWNER/REPO.git`) and verified end-to-end against a live public repo.
 `tests/ingest.test.ts` covers the policy, `isRemoteTarget`, a hermetic `file://` clone, and prepare/cleanup.
+
+**2.2d result (git-URL scanning across the stack):** the async delivery layer now carries a `sourceUrl`
+alongside `projectDir` on `ScanJobPayload`/`SubmitScanInput` (exactly one required). The worker's scan
+processor resolves the target via `prepareSource` — cloning a remote repo into a temp dir (a configurable
+`tmpRoot`), scanning it, and removing it in `finally` — so distributed workers get URL scanning for free and
+enforce the https-only policy by default. The API's `POST /projects/:id/scans` accepts `{ projectDir | sourceUrl }`:
+local paths go through the allowed-roots guard, remote URLs through `assertAllowedRemote` (400 `forbidden_source`
+on violation) before enqueue. The web `SubmitForm` offers a "Configured project / Public git URL" toggle. Verified
+by a hermetic end-to-end async job test (`file://` clone → COMPLETED → temp removed), API policy tests
+(http, SSRF, both/neither → 400), and a LIVE API run that cloned and scanned a public GitHub repo end-to-end.
 
 **2.10 result (distributed deployment):** `@qa/jobs/adapters` ships REAL adapters — `BullMqJobQueue`
 (bullmq + ioredis) and `PostgresScanStore` (node-postgres), both implementing the same `JobQueue`/`ScanStore`

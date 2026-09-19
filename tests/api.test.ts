@@ -78,6 +78,11 @@ describe('API scan lifecycle', () => {
     expect(humanRes.headers.get('content-type')).toContain('text/markdown');
     expect(await humanRes.text()).toContain('Release Decision');
 
+    // HTML report
+    const htmlRes = await fetch(`${base}/scans/${scanId}/report?format=html`);
+    expect(htmlRes.headers.get('content-type')).toContain('text/html');
+    expect(await htmlRes.text()).toContain('<!DOCTYPE html>');
+
     // CycloneDX SBOM
     const cdx = (await (await fetch(`${base}/scans/${scanId}/report?format=cyclonedx`)).json()) as { bomFormat: string };
     expect(cdx.bomFormat).toBe('CycloneDX');
@@ -92,6 +97,42 @@ describe('API scan lifecycle', () => {
     });
     expect(r.status).toBe(403);
     expect((await r.json()).error).toBe('forbidden_path');
+  });
+
+  it('rejects a disallowed sourceUrl before enqueuing (400) — remote-source policy', async () => {
+    // http (not https)
+    const httpRes = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sourceUrl: 'http://github.com/o/r.git' }),
+    });
+    expect(httpRes.status).toBe(400);
+    expect((await httpRes.json()).error).toBe('forbidden_source');
+
+    // private/loopback host (SSRF)
+    const ssrfRes = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sourceUrl: 'https://169.254.169.254/latest/meta-data' }),
+    });
+    expect(ssrfRes.status).toBe(400);
+    expect((await ssrfRes.json()).error).toBe('forbidden_source');
+  });
+
+  it('rejects a submit that provides both or neither target (400)', async () => {
+    const neither = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(neither.status).toBe(400);
+
+    const both = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: fixtureDir, sourceUrl: 'https://github.com/o/r.git' }),
+    });
+    expect(both.status).toBe(400);
   });
 
   it('returns 404 for an unknown scan and 409 before completion result is ready', async () => {

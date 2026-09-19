@@ -4,10 +4,11 @@
  */
 
 import { describe, it, expect, afterAll } from 'vitest';
+import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   InMemoryJobQueue,
   InMemoryScanStore,
@@ -21,6 +22,16 @@ const tmpDirs: string[] = [];
 afterAll(async () => {
   for (const d of tmpDirs) await fs.rm(d, { recursive: true, force: true });
 });
+
+function git(cwd: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const c = spawn('git', args, { cwd, shell: false, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+    let err = '';
+    c.stderr?.on('data', (d) => (err += String(d)));
+    c.on('error', reject);
+    c.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`git ${args.join(' ')}: ${err}`))));
+  });
+}
 
 describe('InMemoryJobQueue (§VI.7)', () => {
   it('processes enqueued messages and resolves onIdle', async () => {
@@ -84,5 +95,43 @@ describe('ScanService + worker end-to-end (§VI.6)', () => {
     expect(done?.progress.pct).toBe(100);
     expect(done?.result?.releaseDecision.decision).toBe('NO_GO');
     expect(done?.result?.findings.some((f) => f.ruleId === 'SEC-SECRET-001')).toBe(true);
+  });
+
+  it('submits a scan from a git URL: clones, scans, completes, and cleans up the temp clone', async () => {
+    // Build a local git repo (a stand-in for a remote) with one committed, flaggable file.
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'qa-jobs-git-'));
+    tmpDirs.push(tmp);
+    const origin = path.join(tmp, 'origin');
+    await fs.mkdir(origin, { recursive: true });
+    await fs.writeFile(path.join(origin, 'server.js'), 'const apiKey = "AKIA1234567890ABCDEF";\n', 'utf8');
+    await git(origin, ['init', '-q', '-b', 'main']);
+    await git(origin, ['-c', 'user.email=t@t', '-c', 'user.name=t', 'add', 'server.js']);
+    await git(origin, ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'init']);
+    const url = pathToFileURL(origin).href;
+
+    const store = new InMemoryScanStore();
+    const queue = new InMemoryJobQueue<ScanJobPayload>();
+    const service = new ScanService(store, queue);
+    // Dedicated clone root so the cleanup assertion is isolated from other (parallel) test files.
+    const cloneRoot = path.join(tmp, 'clones');
+    await fs.mkdir(cloneRoot, { recursive: true });
+    // Policy disabled so the hermetic file:// URL is accepted (production defaults to https-only).
+    startWorker(store, queue, { environment: 'test-worker', enforceRemotePolicy: false, tmpRoot: cloneRoot });
+
+    const rec = await service.submit({ projectId: 'git', sourceUrl: url, evidenceRoot: path.join(tmp, 'ev') });
+    await queue.onIdle();
+
+    const done = await store.get(rec.scanId);
+    expect(done?.state).toBe('COMPLETED');
+    expect(done?.result?.findings.some((f) => f.category === 'Security')).toBe(true);
+    // The temp clone must be gone (cleanup ran) — its dedicated parent is now empty.
+    expect(await fs.readdir(cloneRoot)).toEqual([]);
+  });
+
+  it('rejects a submit with neither projectDir nor sourceUrl', async () => {
+    const store = new InMemoryScanStore();
+    const queue = new InMemoryJobQueue<ScanJobPayload>();
+    const service = new ScanService(store, queue);
+    await expect(service.submit({ projectId: 'x', evidenceRoot: os.tmpdir() })).rejects.toThrow(/exactly one/i);
   });
 });

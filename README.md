@@ -29,7 +29,7 @@ See [`docs/08-implementation-roadmap.md`](./docs/08-implementation-roadmap.md) f
 
 ```bash
 npm install
-npm test                                   # 109 tests (BullMQ test auto-skips without Redis)
+npm test                                   # 113 tests (BullMQ test auto-skips without Redis)
 npm run scan -- fixtures/vulnerable-sample # one-shot CLI scan of a local dir (dual output + exports)
 npm run scan -- https://github.com/OWNER/REPO.git  # …or scan a public repo straight from a git URL
 npm run worker -- fixtures/vulnerable-sample   # async worker demo (in-memory)
@@ -39,6 +39,9 @@ npm run benchmark                          # detection-quality benchmark: recall
 ```
 
 The web UI needs the API running (`npm run api` in another terminal; set `QA_API_URL` to point elsewhere).
+In the UI (and the API's `POST /projects/:id/scans`), a scan target is **either** a configured local
+project **or** a public https git URL — remote repos are shallow-cloned, scanned, then deleted. The API
+enforces an https-only / no-credentials / no-private-host policy on submitted URLs (SSRF mitigation).
 
 **Authentication & multi-tenancy** (opt-in): set `QA_API_KEYS` to a JSON array of
 `[{"key":"...","orgId":"...","role":"Developer","keyId":"..."}]` to enforce API-key auth, RBAC, and

@@ -10,7 +10,7 @@
  * Endpoints:
  *   GET  /health
  *   GET  /scans                          list (optional ?projectId=)
- *   POST /projects/:projectId/scans      { projectDir } -> 202 { scanId }
+ *   POST /projects/:projectId/scans      { projectDir | sourceUrl } -> 202 { scanId }
  *   GET  /scans/:scanId                   job status + honest stage progress (no fake %)
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
  *   GET  /scans/:scanId/findings          filter ?severity=&status=
@@ -20,7 +20,7 @@
 import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { renderHumanReport } from '@qa/orchestrator';
+import { assertAllowedRemote, isRemoteTarget, renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import {
   InMemoryAuditStore,
@@ -197,19 +197,42 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       } catch (e) {
         return json(res, 400, { error: 'bad_request', message: e instanceof Error ? e.message : 'invalid body' });
       }
-      const projectDir = typeof body.projectDir === 'string' ? body.projectDir : '';
-      if (!projectDir) return json(res, 400, { error: 'bad_request', message: 'projectDir is required' });
+      const projectDir = typeof body.projectDir === 'string' ? body.projectDir.trim() : '';
+      const sourceUrl = typeof body.sourceUrl === 'string' ? body.sourceUrl.trim() : '';
+      if (!projectDir === !sourceUrl) {
+        return json(res, 400, { error: 'bad_request', message: 'provide exactly one of projectDir or sourceUrl' });
+      }
 
-      const check = resolveWithinAllowedRoots(projectDir, config.allowedRoots);
-      if (!check.ok) return json(res, 403, { error: 'forbidden_path', message: check.reason });
-
-      const record = await service.submit({
+      const submitInput: { projectId: string; projectDir?: string; sourceUrl?: string; evidenceRoot: string; orgId: string } = {
         projectId,
-        projectDir: check.resolved,
         evidenceRoot: config.evidenceRoot,
         orgId: principal.orgId,
-      });
-      await audit.append({ orgId: principal.orgId, actor: principal.keyId, action: 'scan.submit', target: record.scanId });
+      };
+      let auditTarget: string;
+
+      if (sourceUrl) {
+        // Remote target: enforce the https-only / no-creds / no-private-host policy before enqueuing.
+        if (!isRemoteTarget(sourceUrl)) {
+          return json(res, 400, { error: 'bad_request', message: 'sourceUrl is not a URL' });
+        }
+        let normalized: string;
+        try {
+          normalized = assertAllowedRemote(sourceUrl);
+        } catch (e) {
+          return json(res, 400, { error: 'forbidden_source', message: e instanceof Error ? e.message : 'disallowed source URL' });
+        }
+        submitInput.sourceUrl = normalized;
+        auditTarget = normalized;
+      } else {
+        // Local target: constrain to the API's configured allowed roots (§VIII.5 path guard).
+        const check = resolveWithinAllowedRoots(projectDir, config.allowedRoots);
+        if (!check.ok) return json(res, 403, { error: 'forbidden_path', message: check.reason });
+        submitInput.projectDir = check.resolved;
+        auditTarget = check.resolved;
+      }
+
+      const record = await service.submit(submitInput);
+      await audit.append({ orgId: principal.orgId, actor: principal.keyId, action: 'scan.submit', target: `${record.scanId} (${auditTarget})` });
       res.setHeader('location', `/scans/${record.scanId}`);
       return json(res, 202, summarize(record));
     }

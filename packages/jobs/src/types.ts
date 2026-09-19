@@ -8,7 +8,10 @@ import { SCAN_STAGES, type ScanStage } from '@qa/orchestrator';
 export interface ScanJobPayload {
   scanId: string;
   projectId: string;
-  projectDir: string;
+  /** Local directory to scan. Mutually exclusive with sourceUrl (exactly one is set). */
+  projectDir?: string;
+  /** Public https git URL to shallow-clone and scan. Mutually exclusive with projectDir. */
+  sourceUrl?: string;
   evidenceDir: string;
 }
 

@@ -153,6 +153,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.32 | Go security engine (§V.7 — TLS-skip/shell-exec/SQL-concat/weak-hash → Security dim) | ✅ |
 | 2.33 | Java security engine (§V.7 — Runtime.exec/SQL-concat/readObject/ECB → Security dim) | ✅ |
 | 2.34 | PHP security engine (§V.7 — eval/shell-exec/SQL-concat/unserialize/LFI/XSS/weak-hash → Security dim) | ✅ |
+| 2.35 | C#/.NET security engine (§V.7 — Process.Start/SQL-concat/BinaryFormatter/TLS-skip/weak-cipher/hash → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -226,6 +227,16 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.35 result (C#/.NET engine):** `CSharpScanner` flags C# security anti-patterns — `Process.Start` built
+from input (CWE-78), `SqlCommand`/`CommandText` built by concatenation/interpolation (CWE-89), insecure
+deserialization formatters (`BinaryFormatter`/`SoapFormatter`/`NetDataContractSerializer`/…, CWE-502), TLS
+certificate validation disabled (`ServerCertificateValidationCallback … => true` / `DangerousAcceptAny…`,
+CWE-295), weak ciphers/modes (DES/3DES/ECB, CWE-327), and MD5/SHA-1 (CWE-327) — feeding the Security
+dimension. Block + quote-aware `//` comment stripping avoids comment false positives, and the injection rules
+require a concrete signal (concatenation/interpolation/`String.Format`) so benign literal calls
+(`Process.Start("notepad.exe")`, `new SqlCommand("SELECT 1", conn)`) and `SHA256` are not flagged. Isolated
+fixture `fixtures/insecure-csharp`; 2 tests including count assertions and a safe-C# no-false-positive check.
 
 **2.34 result (PHP engine):** `PhpScanner` flags PHP security anti-patterns — `eval()` (CWE-95),
 OS command execution via `system`/`exec`/`shell_exec`/`passthru`/`proc_open`/`popen` (CWE-78), SQL queries

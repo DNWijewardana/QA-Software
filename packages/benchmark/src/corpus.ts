@@ -90,4 +90,8 @@ export const GOLDEN_CORPUS: CorpusEntry[] = [
     fixture: 'insecure-php',
     expected: ['PHP-EVAL-001', 'PHP-SHELL-EXEC-001', 'PHP-SQL-CONCAT-001', 'PHP-UNSERIALIZE-001', 'PHP-FILE-INCLUSION-001', 'PHP-XSS-ECHO-001', 'PHP-WEAK-HASH-001'],
   },
+  {
+    fixture: 'insecure-csharp',
+    expected: ['CS-PROCESS-START-001', 'CS-SQL-CONCAT-001', 'CS-DESERIALIZE-001', 'CS-CERT-VALIDATION-001', 'CS-WEAK-CIPHER-001', 'CS-WEAK-HASH-001'],
+  },
 ];

@@ -27,6 +27,7 @@ export * from './python-scanner.js';
 export * from './go-scanner.js';
 export * from './java-scanner.js';
 export * from './php-scanner.js';
+export * from './csharp-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -51,6 +52,7 @@ import { PythonScanner } from './python-scanner.js';
 import { GoScanner } from './go-scanner.js';
 import { JavaScanner } from './java-scanner.js';
 import { PhpScanner } from './php-scanner.js';
+import { CSharpScanner } from './csharp-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -77,5 +79,6 @@ export function defaultStaticEngines(): Engine[] {
     new GoScanner(),
     new JavaScanner(),
     new PhpScanner(),
+    new CSharpScanner(),
   ];
 }

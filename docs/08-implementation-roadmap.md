@@ -35,7 +35,7 @@
 | 15 | Definition of Done | ✅ (see below) |
 | 16 | Compliance & Privacy Model | ☐ |
 | 17 | AI/LLM Governance Model | ☐ (only if AI features enabled) |
-| 18 | Supply-Chain Security Model | ☐ |
+| 18 | Supply-Chain Security Model (`10`) | ✅ |
 
 ## Phase 1 — Foundation + first vertical slice (current)
 

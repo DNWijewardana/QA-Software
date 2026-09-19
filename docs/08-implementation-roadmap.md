@@ -152,6 +152,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.31 | Python security engine (§V.7 — eval/pickle/shell/yaml.load → Security dim; broadens beyond JS/TS) | ✅ |
 | 2.32 | Go security engine (§V.7 — TLS-skip/shell-exec/SQL-concat/weak-hash → Security dim) | ✅ |
 | 2.33 | Java security engine (§V.7 — Runtime.exec/SQL-concat/readObject/ECB → Security dim) | ✅ |
+| 2.34 | PHP security engine (§V.7 — eval/shell-exec/SQL-concat/unserialize/LFI/XSS/weak-hash → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -225,6 +226,18 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.34 result (PHP engine):** `PhpScanner` flags PHP security anti-patterns — `eval()` (CWE-95),
+OS command execution via `system`/`exec`/`shell_exec`/`passthru`/`proc_open`/`popen` (CWE-78), SQL queries
+built by concatenation/interpolation (CWE-89), `unserialize()` object injection (CWE-502), dynamic
+`include`/`require` file inclusion (LFI/RFI, CWE-98), request data echoed without encoding (reflected XSS,
+CWE-79), and MD5/SHA-1 (CWE-327) — feeding the Security dimension. It strips block comments and uses a
+quote-aware `//`/`#` line-comment stripper (keeping PHP 8 `#[Attribute]`), and negative look-behinds keep
+method calls like PDO `$pdo->exec($sql)` from firing the shell-exec rule; the XSS rule skips output already
+passed through `htmlspecialchars`/`htmlentities`/`urlencode`/`json_encode`/`intval`/`filter_var`. Isolated
+fixture `fixtures/insecure-php`; 2 tests including a safe-PHP no-false-positive check (prepared statements,
+escaped output, static include, SHA-256) and count assertions proving the comment and the safe PDO `->exec`
+are not flagged.
 
 **2.33 result (Java engine):** `JavaScanner` flags Java security anti-patterns — `Runtime.getRuntime().exec`
 (CWE-78), JDBC statements built by string concatenation/`String.format` (CWE-89), `readObject()`

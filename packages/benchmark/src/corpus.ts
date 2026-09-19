@@ -86,4 +86,8 @@ export const GOLDEN_CORPUS: CorpusEntry[] = [
     fixture: 'insecure-java',
     expected: ['JAVA-RUNTIME-EXEC-001', 'JAVA-SQL-CONCAT-001', 'JAVA-DESERIALIZE-001', 'JAVA-ECB-001', 'JAVA-WEAK-HASH-001'],
   },
+  {
+    fixture: 'insecure-php',
+    expected: ['PHP-EVAL-001', 'PHP-SHELL-EXEC-001', 'PHP-SQL-CONCAT-001', 'PHP-UNSERIALIZE-001', 'PHP-FILE-INCLUSION-001', 'PHP-XSS-ECHO-001', 'PHP-WEAK-HASH-001'],
+  },
 ];

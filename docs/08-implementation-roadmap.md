@@ -31,7 +31,7 @@
 | 11 | Execution Sandbox Model (`06`) | ▶ |
 | 12 | UI/UX Information Architecture | ☐ |
 | 13 | Implementation Roadmap (this doc) | ✅ |
-| 14 | Testing Strategy | ☐ |
+| 14 | Testing Strategy (`09`) | ✅ |
 | 15 | Definition of Done | ✅ (see below) |
 | 16 | Compliance & Privacy Model | ☐ |
 | 17 | AI/LLM Governance Model | ☐ (only if AI features enabled) |

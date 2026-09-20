@@ -22,6 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 QA Engineering Platform
               </Link>
             </h1>
+            <nav aria-label="Primary" className="site-nav">
+              <Link href="/">Scans</Link>
+              <Link href="/audit">Audit log</Link>
+            </nav>
             <span className="tag">Evidence-driven · SAFE&nbsp;STATIC</span>
           </div>
         </header>

@@ -145,6 +145,22 @@ export interface ScanDiff {
   regressionDetected: boolean;
 }
 
+export interface AuditEvent {
+  id: string;
+  orgId: string;
+  actor: string;
+  action: string;
+  target: string;
+  createdAt: string;
+  prevHash: string;
+  hash: string;
+}
+
+export interface AuditResponse {
+  integrity: { ok: boolean; brokenAt?: string };
+  events: AuditEvent[];
+}
+
 export const SEVERITY_ORDER = ['Critical', 'High', 'Medium', 'Low', 'Informational'] as const;
 
 export function isTerminal(state: string): boolean {

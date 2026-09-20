@@ -186,6 +186,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.24 | `apps/web` SBOM + SEO panels — supply-chain inventory + SEO report on the scan page | ✅ |
 | 2.26 | `apps/web` Manual-review queue + Limitations panels (§IX.5, Rule 10 — honesty UI) | ✅ |
 | 2.38 | `apps/web` Compare-to-baseline view — surfaces the differential-analysis endpoint (§VII.10) | ✅ |
+| 2.39 | `apps/web` Audit-log viewer — tamper-evident chain + integrity status (§VIII.7, §IX.5) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -263,6 +264,14 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.39 result (web audit-log viewer):** a new `/audit` page (with a header nav link) surfaces the
+tamper-evident, hash-chained audit log (§VIII.7). It shows the **integrity status** prominently (✓ verified with
+event count, or ⚠ broken-at-event id) and a table of events (time, actor, action, target, hash prefix). It is a
+server component using the same `authHeaders` server-fetch pattern as the home page, and handles 401/403 (the
+API role-gates `/audit` to Owner/Admin/Auditor/Compliance Officer) and API-unreachable gracefully. Verified:
+`next build` clean (`/audit` route generated); a live API smoke confirmed the `{integrity, events}` shape and a
+real hash-chained `scan.submit` event. The audit endpoint is already covered by `tests/audit-ratelimit.test.ts`.
 
 **2.38 result (web compare-to-baseline):** the scan detail page now renders a **Compare to a baseline scan**
 panel (`CompareBaseline.tsx`) that lists other completed scans, and on selection fetches

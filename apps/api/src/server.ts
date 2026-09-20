@@ -10,7 +10,7 @@
  * Endpoints:
  *   GET  /health
  *   GET  /scans                          list (optional ?projectId=)
- *   POST /projects/:projectId/scans      { projectDir | sourceUrl, policy? } -> 202 { scanId }
+ *   POST /projects/:projectId/scans      { projectDir | sourceUrl, policy?, suppressions? } -> 202 { scanId }
  *   GET  /scans/:scanId                   job status + honest stage progress (no fake %)
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
  *   GET  /scans/:scanId/findings          filter ?severity=&status=
@@ -23,7 +23,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { assertAllowedRemote, isRemoteTarget, renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
-import { diffScans, renderScanDiff, type ScanPolicy } from '@qa/core';
+import { diffScans, renderScanDiff, type ScanPolicy, type Suppression } from '@qa/core';
 import {
   InMemoryAuditStore,
   InMemoryJobQueue,
@@ -205,7 +205,7 @@ export function createApiServer(config: ApiConfig): ApiHandle {
         return json(res, 400, { error: 'bad_request', message: 'provide exactly one of projectDir or sourceUrl' });
       }
 
-      const submitInput: { projectId: string; projectDir?: string; sourceUrl?: string; evidenceRoot: string; orgId: string; policy?: ScanPolicy } = {
+      const submitInput: { projectId: string; projectDir?: string; sourceUrl?: string; evidenceRoot: string; orgId: string; policy?: ScanPolicy; suppressions?: Suppression[] } = {
         projectId,
         evidenceRoot: config.evidenceRoot,
         orgId: principal.orgId,
@@ -214,6 +214,11 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       // a policy can never un-block a Critical finding.
       if (body.policy && typeof body.policy === 'object' && !Array.isArray(body.policy)) {
         submitInput.policy = body.policy as ScanPolicy;
+      }
+      // Optional false-positive suppressions (§VII.17). Invalid entries are validated/ignored by the
+      // orchestrator; a suppression can never hide a Critical finding.
+      if (Array.isArray(body.suppressions)) {
+        submitInput.suppressions = body.suppressions as Suppression[];
       }
       let auditTarget: string;
 

@@ -27,7 +27,7 @@ export function createScanProcessor(
   opts: ScanProcessorOptions = {},
 ): JobProcessor<ScanJobPayload> {
   return async (msg: QueuedMessage<ScanJobPayload>): Promise<void> => {
-    const { scanId, projectDir, sourceUrl, evidenceDir, policy } = msg.payload;
+    const { scanId, projectDir, sourceUrl, evidenceDir, policy, suppressions } = msg.payload;
     // Resolve the job's target into a readable directory — cloning a remote repo if needed.
     // The clone happens INSIDE the try so any failure is recorded as FAILED (never silently lost),
     // and cleanup runs in finally so a temp clone is always removed.
@@ -47,6 +47,7 @@ export function createScanProcessor(
         evidenceDir,
         environment: opts.environment ?? 'worker',
         policy,
+        suppressions,
         onStage: (stage) => {
           // In-memory store updates resolve synchronously; fire-and-forget keeps onStage sync.
           void store.update(scanId, { state: stageToState(stage), progress: progressForStage(stage) });

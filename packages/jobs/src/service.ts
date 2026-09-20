@@ -4,7 +4,7 @@
  */
 
 import path from 'node:path';
-import type { ScanPolicy } from '@qa/core';
+import type { ScanPolicy, Suppression } from '@qa/core';
 import { newScanId } from '@qa/orchestrator';
 import type { JobQueue } from './queue.js';
 import { createScanProcessor, type ScanProcessorOptions } from './processor.js';
@@ -23,6 +23,8 @@ export interface SubmitScanInput {
   orgId?: string;
   /** optional scoring/gate policy (§VII.11) applied to this scan. */
   policy?: ScanPolicy;
+  /** optional scoped, auditable false-positive suppressions (§VII.17) applied to this scan. */
+  suppressions?: Suppression[];
 }
 
 export class ScanService {
@@ -54,6 +56,7 @@ export class ScanService {
       sourceUrl: input.sourceUrl,
       evidenceDir: path.join(input.evidenceRoot, scanId, 'evidence'),
       policy: input.policy,
+      suppressions: input.suppressions,
     });
     return record;
   }

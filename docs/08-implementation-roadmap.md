@@ -115,7 +115,10 @@ Critical** — a matching Critical is refused and stays active/blocking. `runSca
 (omitting = active set unchanged); the CLI accepts `--suppressions <file.json>`; the human report gains an
 auditable "Suppressed Findings" section and limitation notes (count, refused-Criticals, invalid entries).
 `tests/suppression.test.ts` (4) covers validation, expiry, the Critical-never-suppressed guard (unit + via
-`runScan` on the vulnerable sample → still NO_GO), and end-to-end recording.
+`runScan` on the vulnerable sample → still NO_GO), and end-to-end recording. Suppressions are also threaded
+through the **async delivery layer** (`ScanJobPayload`/`SubmitScanInput.suppressions`, applied by the worker's
+processor, accepted in the API `POST /projects/:id/scans` body); `tests/api.test.ts` verifies a submit-time
+suppression excludes+records a rule and that a suppression targeting a Critical still yields NO_GO.
 
 **3.7 result (configurable policy engine):** `ScanPolicy` + `resolvePolicy` (`packages/core/policy.ts`) make
 scoring **policy configurable per scan** (§VII.11, §86 — "never hard-code org policy"): per-dimension

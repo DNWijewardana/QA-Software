@@ -2,7 +2,7 @@
  * Job/scan domain types for the async delivery layer (§VI.6, §VI.7).
  */
 
-import type { JobState, ScanPolicy, ScanResult } from '@qa/core';
+import type { JobState, ScanPolicy, ScanResult, Suppression } from '@qa/core';
 import { SCAN_STAGES, type ScanStage } from '@qa/orchestrator';
 
 export interface ScanJobPayload {
@@ -15,6 +15,8 @@ export interface ScanJobPayload {
   evidenceDir: string;
   /** Optional scoring/gate policy (§VII.11). Plain JSON so it survives queue serialization. */
   policy?: ScanPolicy;
+  /** Optional scoped, auditable false-positive suppressions (§VII.17). Plain JSON. */
+  suppressions?: Suppression[];
 }
 
 /** Honest, stage-based progress — derived from the ordinal of the current stage, never fabricated (§VI.6). */

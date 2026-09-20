@@ -139,6 +139,46 @@ describe('API scan lifecycle', () => {
     expect((await fetch(`${base}/scans/nope`)).status).toBe(404);
   });
 
+  it('applies submit-time suppressions (§VII.17), recording them and never hiding a Critical', async () => {
+    const rubyDir = path.join(fixturesRoot, 'insecure-ruby');
+
+    // Suppress a specific Low rule → excluded from findings, recorded under suppressedFindings.
+    const sub = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        projectDir: rubyDir,
+        suppressions: [{ id: 'a1', ruleId: 'RB-WEAK-HASH-001', reason: 'accepted risk', createdBy: 'qa@example.com', createdAt: '2026-01-01' }],
+      }),
+    });
+    const { scanId: subId } = (await sub.json()) as { scanId: string };
+    await waitForCompletion(subId);
+    const subResult = (await (await fetch(`${base}/scans/${subId}/result`)).json()) as {
+      findings: Array<{ ruleId: string }>;
+      suppressedFindings?: Array<{ finding: { ruleId: string } }>;
+    };
+    expect(subResult.findings.some((f) => f.ruleId === 'RB-WEAK-HASH-001')).toBe(false);
+    expect(subResult.suppressedFindings?.some((s) => s.finding.ruleId === 'RB-WEAK-HASH-001')).toBe(true);
+
+    // A suppression targeting a Critical rule can never hide it → still NO_GO.
+    const critSub = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        projectDir: fixtureDir,
+        suppressions: [{ id: 'a2', ruleId: 'SEC-SECRET-001', reason: 'trying to hide it', createdBy: 'x', createdAt: '2026-01-01' }],
+      }),
+    });
+    const { scanId: critId } = (await critSub.json()) as { scanId: string };
+    await waitForCompletion(critId);
+    const critResult = (await (await fetch(`${base}/scans/${critId}/result`)).json()) as {
+      releaseDecision: { decision: string };
+      findings: Array<{ ruleId: string; severity: string }>;
+    };
+    expect(critResult.releaseDecision.decision).toBe('NO_GO');
+    expect(critResult.findings.some((f) => f.ruleId === 'SEC-SECRET-001' && f.severity === 'Critical')).toBe(true);
+  });
+
   it('applies a submit-time policy to the scan (§VII.11) and can never un-block a Critical', async () => {
     const rubyDir = path.join(fixturesRoot, 'insecure-ruby'); // High findings, no Critical
 

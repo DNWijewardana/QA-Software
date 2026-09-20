@@ -139,6 +139,43 @@ describe('API scan lifecycle', () => {
     expect((await fetch(`${base}/scans/nope`)).status).toBe(404);
   });
 
+  it('applies a submit-time policy to the scan (§VII.11) and can never un-block a Critical', async () => {
+    const rubyDir = path.join(fixturesRoot, 'insecure-ruby'); // High findings, no Critical
+
+    // Default policy: High findings exceed the budget of 0 → GO_WITH_CONDITIONS.
+    const def = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: rubyDir }),
+    });
+    const { scanId: defId } = (await def.json()) as { scanId: string };
+    await waitForCompletion(defId);
+    const defResult = (await (await fetch(`${base}/scans/${defId}/result`)).json()) as { releaseDecision: { decision: string } };
+    expect(defResult.releaseDecision.decision).toBe('GO_WITH_CONDITIONS');
+
+    // Raised High budget via policy → GO.
+    const relaxed = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: rubyDir, policy: { gates: { maxHigh: 20 } } }),
+    });
+    const { scanId: relaxedId } = (await relaxed.json()) as { scanId: string };
+    await waitForCompletion(relaxedId);
+    const relaxedResult = (await (await fetch(`${base}/scans/${relaxedId}/result`)).json()) as { releaseDecision: { decision: string } };
+    expect(relaxedResult.releaseDecision.decision).toBe('GO');
+
+    // Honesty guard: even a permissive policy cannot un-block a Critical (vulnerable-sample) → NO_GO.
+    const permissive = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: fixtureDir, policy: { weights: { Security: 0 }, gates: { maxHigh: 9999 } } }),
+    });
+    const { scanId: critId } = (await permissive.json()) as { scanId: string };
+    await waitForCompletion(critId);
+    const critResult = (await (await fetch(`${base}/scans/${critId}/result`)).json()) as { releaseDecision: { decision: string } };
+    expect(critResult.releaseDecision.decision).toBe('NO_GO');
+  });
+
   it('differential analysis: compares two scans and reports a regression (§VII.10)', async () => {
     // Baseline: the architecture fixture (no Critical). Current: the vulnerable sample (seeded Critical).
     const baseSubmit = await fetch(`${base}/projects/demo/scans`, {

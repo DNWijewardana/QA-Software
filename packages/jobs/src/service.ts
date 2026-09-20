@@ -4,6 +4,7 @@
  */
 
 import path from 'node:path';
+import type { ScanPolicy } from '@qa/core';
 import { newScanId } from '@qa/orchestrator';
 import type { JobQueue } from './queue.js';
 import { createScanProcessor, type ScanProcessorOptions } from './processor.js';
@@ -20,6 +21,8 @@ export interface SubmitScanInput {
   evidenceRoot: string;
   /** owning org/tenant (§VIII.8). Defaults to 'default' when auth is not enabled. */
   orgId?: string;
+  /** optional scoring/gate policy (§VII.11) applied to this scan. */
+  policy?: ScanPolicy;
 }
 
 export class ScanService {
@@ -50,6 +53,7 @@ export class ScanService {
       projectDir: input.projectDir,
       sourceUrl: input.sourceUrl,
       evidenceDir: path.join(input.evidenceRoot, scanId, 'evidence'),
+      policy: input.policy,
     });
     return record;
   }

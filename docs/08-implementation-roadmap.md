@@ -112,6 +112,10 @@ unchanged). **Honesty guard (§VII.8, Rule 22/23): a policy can NEVER un-block a
 findings always force NO_GO regardless of weights or the High budget, and the score-gaming/Critical-visibility
 invariants remain enforced independently. `tests/policy.test.ts` (4) covers clamping/defaults, a weight
 change, a gate flip (GO_WITH_CONDITIONS→GO when the High budget is raised), and the Critical-still-blocks guard.
+The policy is also threaded through the **async delivery layer**: `ScanJobPayload`/`SubmitScanInput` carry an
+optional `policy` (plain JSON, survives queue serialization), the worker's scan processor applies it, and the
+API accepts it in the `POST /projects/:id/scans` body. `tests/api.test.ts` verifies a submit-time policy flips
+the decision to GO and — again — that a permissive policy cannot un-block a Critical (NO_GO).
 
 **3.6 result (differential / baseline analysis):** `diffScans(baseline, current)` (`packages/core/diff.ts`) is a
 pure, deterministic comparison of two scan results (§VII.10, §44, §84). Findings are matched by a **stable

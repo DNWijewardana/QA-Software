@@ -221,6 +221,19 @@ export const ScanResultSchema = z.object({
       summary: z.object({ pages: z.number().int(), issues: z.number().int() }),
     })
     .optional(),
+  suppressedFindings: z
+    .array(
+      z.object({
+        finding: FindingSchema,
+        suppression: z.object({
+          id: z.string(),
+          reason: z.string(),
+          createdBy: z.string(),
+          expiresAt: z.string().optional(),
+        }),
+      }),
+    )
+    .optional(),
 });
 
 export type ScanResultContract = z.infer<typeof ScanResultSchema>;

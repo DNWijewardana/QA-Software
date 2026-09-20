@@ -14,13 +14,16 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   assertFindings,
+  applySuppressions,
   computeDimensionScore,
   computeOverall,
   decideRelease,
   mapCompliance,
   resolvePolicy,
+  resolveSuppressions,
   type Assumption,
   type ScanPolicy,
+  type Suppression,
   type DimensionScore,
   type ExecutionManifest,
   type Finding,
@@ -68,6 +71,8 @@ export interface OrchestratorOptions {
   onStage?: (stage: ScanStage) => void;
   /** Configurable scoring/gate policy (§VII.11). Omitting it uses platform defaults unchanged. */
   policy?: ScanPolicy;
+  /** Scoped, auditable false-positive suppressions (§VII.17). A suppression can never hide a Critical. */
+  suppressions?: Suppression[];
 }
 
 async function walk(dir: string, root: string, acc: ProjectFile[]): Promise<void> {
@@ -161,10 +166,17 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   // Resolve the (optional) scoring/gate policy (§VII.11); omitting it reproduces platform defaults.
   const policy = resolvePolicy(opts.policy);
 
+  // Apply scoped, auditable false-positive suppressions (§VII.17). Suppressed (non-Critical) findings move
+  // out of the scored/active set but are RECORDED for audit; a Critical is never suppressed. Omitting
+  // suppressions leaves `active === allFindings` (behavior unchanged).
+  const now = new Date().toISOString();
+  const { valid: validSuppressions, errors: suppressionErrors } = resolveSuppressions(opts.suppressions ?? []);
+  const { active, suppressed, refusedCritical } = applySuppressions(allFindings, validSuppressions, now);
+
   // Score each dimension that was actually analyzed.
   const scores: DimensionScore[] = [];
   for (const [dimension, cov] of dimAgg.entries()) {
-    const dimFindings = allFindings.filter((f) => engineDimension(f) === dimension);
+    const dimFindings = active.filter((f) => engineDimension(f) === dimension);
     scores.push(
       computeDimensionScore({
         dimension,
@@ -182,14 +194,14 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   if (seo) assertFindings(seo.findings);
 
   // Compliance mapping (§IV.3): map findings → control-coverage matrix + a ComplianceReadiness score.
-  const { matrix: compliance, score: complianceScore } = mapCompliance(allFindings, ranEngines);
+  const { matrix: compliance, score: complianceScore } = mapCompliance(active, ranEngines);
   scores.push(complianceScore);
 
-  const overall = computeOverall(scores, allFindings, {
+  const overall = computeOverall(scores, active, {
     coverageFloor: policy.coverageFloor,
     overallCoverageThreshold: policy.minEvidenceCoverage,
   });
-  const releaseDecision = decideRelease(overall, allFindings, {
+  const releaseDecision = decideRelease(overall, active, {
     maxHigh: policy.maxHigh,
     minEvidenceCoverage: policy.minEvidenceCoverage,
   });
@@ -228,7 +240,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     coverage: { byDimension, overall: overall.evidenceCoverage },
     scores,
     overall,
-    findings: allFindings,
+    findings: active,
     releaseDecision,
     manualReviewQueue: [
       { item: 'Subjective UX and architecture review', reason: 'Requires human judgment (§V.4/§V.10).' },
@@ -248,10 +260,20 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
       ...(sbom
         ? ['Dependency components were inventoried into an SBOM, but were NOT checked against a CVE/OSV/KEV database (offline). Component vulnerability status is NOT_TESTED (§V.17).']
         : []),
+      ...(suppressed.length
+        ? [`${suppressed.length} finding(s) were suppressed by scoped, auditable suppressions (§VII.17) and excluded from scores/gates; they are recorded under suppressedFindings.`]
+        : []),
+      ...(refusedCritical > 0
+        ? [`${refusedCritical} suppression(s) matched a Critical finding and were REFUSED — a suppression can never hide a Critical (§VII.8).`]
+        : []),
+      ...(suppressionErrors.length
+        ? [`${suppressionErrors.length} suppression(s) were invalid and ignored: ${suppressionErrors.join('; ')}`]
+        : []),
     ],
     ...(sbom ? { sbom } : {}),
     compliance,
     ...(seo ? { seo } : {}),
+    ...(suppressed.length ? { suppressedFindings: suppressed } : {}),
   };
 
   // Validate against the canonical contract before returning (§X.4 — catch drift; fail loud).

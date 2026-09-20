@@ -13,3 +13,4 @@ export * from './redaction.js';
 export * from './compliance.js';
 export * from './diff.js';
 export * from './policy.js';
+export * from './suppression.js';

@@ -138,6 +138,17 @@ export function renderHumanReport(r: ScanResult): string {
     p();
   }
 
+  // Suppressed findings (§VII.17) — recorded and auditable; excluded from scores/gates but never hidden.
+  if (r.suppressedFindings && r.suppressedFindings.length) {
+    p('## Suppressed Findings (auditable — excluded from scores/gates)');
+    for (const s of r.suppressedFindings) {
+      const loc = s.finding.location?.file ? ` (${s.finding.location.file}${s.finding.location.line ? `:${s.finding.location.line}` : ''})` : '';
+      const exp = s.suppression.expiresAt ? `, expires ${s.suppression.expiresAt}` : '';
+      p(`- [${s.finding.severity}] ${s.finding.ruleId} — ${s.finding.title}${loc} · suppressed by ${s.suppression.createdBy}${exp}: ${s.suppression.reason}`);
+    }
+    p();
+  }
+
   // Limitations — never hidden (§XIII rule 10).
   p('## Limitations (never hidden)');
   for (const lim of r.limitations) p(`- ${lim}`);

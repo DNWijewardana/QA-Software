@@ -16,6 +16,7 @@ import type {
   Status,
 } from './vocabularies.js';
 import type { ComplianceMatrix } from './compliance.js';
+import type { SuppressedFinding } from './suppression.js';
 
 /** A reference to a stored evidence artifact (blob lives in object storage — §04 doc). */
 export interface EvidenceRef {
@@ -240,4 +241,6 @@ export interface ScanResult {
   compliance?: ComplianceMatrix;
   /** Optional SEO report (§V.24). Separate from software quality; does not affect scores or the release decision. */
   seo?: SeoReport;
+  /** Findings suppressed by a scoped, auditable suppression (§VII.17). Recorded (never deleted) for audit. */
+  suppressedFindings?: SuppressedFinding[];
 }

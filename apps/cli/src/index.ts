@@ -17,7 +17,7 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { diffScans, renderScanDiff, type ScanPolicy, type ScanResult } from '@qa/core';
+import { diffScans, renderScanDiff, type ScanPolicy, type ScanResult, type Suppression } from '@qa/core';
 import { validateScanResult } from '@qa/contracts';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import { isRemoteTarget, newScanId, prepareSource, renderHumanReport, runScan } from '@qa/orchestrator';
@@ -33,6 +33,8 @@ interface Args {
   failOnRegression: boolean;
   /** Optional path to a JSON policy file (weights/gates, §VII.11). */
   policyPath: string;
+  /** Optional path to a JSON suppressions file (array of scoped suppressions, §VII.17). */
+  suppressionsPath: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -42,6 +44,7 @@ function parseArgs(argv: string[]): Args {
   let baseline = '';
   let failOnRegression = false;
   let policyPath = '';
+  let suppressionsPath = '';
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--out') outDir = argv[++i] ?? '';
@@ -49,11 +52,12 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--baseline') baseline = argv[++i] ?? '';
     else if (a === '--fail-on-regression') failOnRegression = true;
     else if (a === '--policy') policyPath = argv[++i] ?? '';
+    else if (a === '--suppressions') suppressionsPath = argv[++i] ?? '';
     else positional.push(a);
   }
   const target = positional[0];
   if (!target) {
-    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>]');
+    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>] [--suppressions <suppressions.json>]');
     process.exit(2);
   }
   return {
@@ -63,7 +67,20 @@ function parseArgs(argv: string[]): Args {
     baseline: baseline ? path.resolve(baseline) : '',
     failOnRegression,
     policyPath: policyPath ? path.resolve(policyPath) : '',
+    suppressionsPath: suppressionsPath ? path.resolve(suppressionsPath) : '',
   };
+}
+
+/** Load a JSON suppressions file (§VII.17): an array of scoped suppressions. Exits(2) on read/parse failure. */
+async function loadSuppressions(p: string): Promise<Suppression[]> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(p, 'utf8'));
+    if (!Array.isArray(parsed)) throw new Error('suppressions file must be a JSON array');
+    return parsed as Suppression[];
+  } catch (err) {
+    console.error(`[qa-scan] Cannot read suppressions: ${err instanceof Error ? err.message : err}`);
+    process.exit(2);
+  }
 }
 
 /** Load a JSON policy file (§VII.11). Exits(2) on read/parse failure; values are clamped later by resolvePolicy. */
@@ -113,6 +130,8 @@ async function main(): Promise<void> {
 
   const policy = args.policyPath ? await loadPolicy(args.policyPath) : undefined;
   if (args.policyPath) console.error(`[qa-scan] Policy: ${args.policyPath}`);
+  const suppressions = args.suppressionsPath ? await loadSuppressions(args.suppressionsPath) : undefined;
+  if (args.suppressionsPath) console.error(`[qa-scan] Suppressions: ${args.suppressionsPath}`);
 
   console.error(`[qa-scan] Mode: SAFE_STATIC  Target: ${source.origin.type}:${source.origin.ref}`);
   let result;
@@ -123,6 +142,7 @@ async function main(): Promise<void> {
       evidenceDir,
       environment: 'local-cli',
       policy,
+      suppressions,
       onStage: (s) => console.error(`[qa-scan] stage: ${s}`),
     });
   } finally {

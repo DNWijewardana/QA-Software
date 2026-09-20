@@ -75,6 +75,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 | 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
 | 3.6 | Differential / baseline analysis (§VII.10) — scan-to-scan diff, regression detection, API compare endpoint | ✅ |
 | 3.7 | Configurable policy engine (§VII.11) — per-scan weights + High-budget + evidence gates (Critical always blocks) | ✅ |
+| 3.8 | False-positive / suppression management (§VII.17) — scoped, auditable, expiring; Critical never suppressible | ✅ |
 | 3.5 | PDF/HTML report rendering; notifications/webhooks; SCM integrations | ☐ |
 
 **3.1 result (auth + multi-tenancy):** the API supports opt-in API-key authentication (enforced when
@@ -102,6 +103,19 @@ It only ever INSERTs — production revokes UPDATE/DELETE on the table so the ch
 rewritten. `createPostgresBackends()` provisions the scan store + audit store on one shared pool, and the API
 uses it in distributed mode. `tests/postgres-audit.test.ts` runs the real SQL via pg-mem: chain verifies,
 listing is org-scoped, and a simulated `UPDATE` is detected by `verify()`.
+
+**3.8 result (suppression / false-positive management):** `Suppression` + `applySuppressions`/`validateSuppression`
+(`packages/core/suppression.ts`) implement the §VII.17 false-positive workflow. A suppression is **scoped**
+(by `ruleId` and/or a non-wildcard `pathPattern`), **attributable** (`createdBy`), **timestamped**
+(`createdAt`), and optionally **expiring** (`expiresAt`); a bare `*`/`**` path with no rule is rejected as a
+forbidden global ignore-all. Matched **non-Critical** findings move out of the scored/active set into
+`suppressedFindings` (a new optional contract field) — **recorded, never deleted**, so an auditor sees exactly
+what was hidden, by whom, and why. **Honesty guard (§VII.8, Rule 14/22): a suppression can NEVER hide a
+Critical** — a matching Critical is refused and stays active/blocking. `runScan({ suppressions })` applies them
+(omitting = active set unchanged); the CLI accepts `--suppressions <file.json>`; the human report gains an
+auditable "Suppressed Findings" section and limitation notes (count, refused-Criticals, invalid entries).
+`tests/suppression.test.ts` (4) covers validation, expiry, the Critical-never-suppressed guard (unit + via
+`runScan` on the vulnerable sample → still NO_GO), and end-to-end recording.
 
 **3.7 result (configurable policy engine):** `ScanPolicy` + `resolvePolicy` (`packages/core/policy.ts`) make
 scoring **policy configurable per scan** (§VII.11, §86 — "never hard-code org policy"): per-dimension

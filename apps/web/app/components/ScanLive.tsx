@@ -6,6 +6,7 @@ import { isTerminal, SEVERITY_ORDER } from '@/app/lib/types';
 import { DecisionBadge } from './Badges';
 import { FindingsTable } from './FindingsTable';
 import { CompliancePanel, DimensionScores, LimitationsPanel, ManualReviewPanel, OverallPanel, SbomPanel, SeoPanel } from './QualityPanels';
+import { CompareBaseline } from './CompareBaseline';
 
 const REPORT_FORMATS = ['human', 'html', 'json', 'sarif', 'junit', 'csv', 'cyclonedx', 'compliance', 'seo'] as const;
 
@@ -138,6 +139,8 @@ export function ScanLive({ scanId, initial }: { scanId: string; initial: ScanSum
               <LimitationsPanel limitations={full.limitations ?? []} />
             </>
           ) : null}
+
+          <CompareBaseline scanId={scanId} />
 
           <h3>Findings</h3>
           <div className="field" style={{ maxWidth: 260 }}>

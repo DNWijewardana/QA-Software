@@ -117,6 +117,34 @@ export interface FullScanResult {
   limitations: string[];
 }
 
+export interface DiffFindingRef {
+  id: string;
+  ruleId: string;
+  title: string;
+  severity: string;
+  file: string | null;
+  line: number | null;
+}
+
+export interface DiffDimension {
+  dimension: string;
+  previous: number | null;
+  current: number | null;
+  delta: number | null;
+  direction: 'improved' | 'regressed' | 'stable' | 'added' | 'removed';
+}
+
+/** Mirrors @qa/core ScanDiff (subset the UI renders). */
+export interface ScanDiff {
+  baselineScanId: string;
+  currentScanId: string;
+  findings: { added: DiffFindingRef[]; resolved: DiffFindingRef[]; unchanged: number };
+  dimensions: DiffDimension[];
+  overall: { previousScore: number | null; currentScore: number | null; scoreDelta: number | null; criticalBlockersDelta: number; highRiskFindingsDelta: number };
+  decision: { previous: string; current: string; changed: boolean; worsened: boolean };
+  regressionDetected: boolean;
+}
+
 export const SEVERITY_ORDER = ['Critical', 'High', 'Medium', 'Low', 'Informational'] as const;
 
 export function isTerminal(state: string): boolean {

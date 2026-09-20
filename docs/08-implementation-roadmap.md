@@ -185,6 +185,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.21 | `apps/web` dashboard panels — overall + dimension meters + compliance matrix (WCAG 2.2 AA) | ✅ |
 | 2.24 | `apps/web` SBOM + SEO panels — supply-chain inventory + SEO report on the scan page | ✅ |
 | 2.26 | `apps/web` Manual-review queue + Limitations panels (§IX.5, Rule 10 — honesty UI) | ✅ |
+| 2.38 | `apps/web` Compare-to-baseline view — surfaces the differential-analysis endpoint (§VII.10) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -262,6 +263,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.38 result (web compare-to-baseline):** the scan detail page now renders a **Compare to a baseline scan**
+panel (`CompareBaseline.tsx`) that lists other completed scans, and on selection fetches
+`/api/scans/:id/diff?baseline=…` (a new BFF proxy route forwarding to the differential endpoint, §VII.10) and
+renders the regression banner, overall/decision movement, new/resolved findings (with severity badges), and
+per-dimension movement. `next build` clean (scan page 4.78 kB, the new diff route generated); the diff backend
+is already API-tested (`tests/api.test.ts`). This surfaces the differential feature to humans, not just CLI/API.
 
 **2.26 result (honesty UI panels):** the scan detail page now renders a **Manual review required** panel
 (the human-judgment items — subjective UX/architecture review, and the full WCAG 2.2 manual audit when the

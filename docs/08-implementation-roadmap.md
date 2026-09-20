@@ -178,6 +178,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.34 | PHP security engine (§V.7 — eval/shell-exec/SQL-concat/unserialize/LFI/XSS/weak-hash → Security dim) | ✅ |
 | 2.35 | C#/.NET security engine (§V.7 — Process.Start/SQL-concat/BinaryFormatter/TLS-skip/weak-cipher/hash → Security dim) | ✅ |
 | 2.36 | Architecture-quality engine (§V.10 — import cycles/god modules/deep relative imports → Maintainability dim) | ✅ |
+| 2.37 | Ruby/Rails security engine (§V.7 — eval/command-injection/Marshal-YAML/SQLi/weak-hash → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -251,6 +252,16 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.37 result (Ruby/Rails engine):** `RubyScanner` flags Ruby security anti-patterns — `eval`/`instance_eval`
+(CWE-95), OS command injection via interpolated backticks/`%x`/`system`/`exec`/`IO.popen`/`Open3` (CWE-78),
+insecure deserialization (`Marshal.load`, `YAML.load`/`unsafe_load` — CWE-502), SQL injection via interpolated
+ActiveRecord/`execute` queries (CWE-89), and MD5/SHA-1 (CWE-327) — feeding the Security dimension. It strips
+`=begin/=end` block comments and quote-aware `#` line comments (leaving `#{…}` interpolation intact), and the
+injection rules REQUIRE interpolation so benign calls (`system("ls","-la")`, `where("name = ?", n)`,
+`YAML.safe_load`, `Digest::SHA256`) are not flagged. Isolated fixture `fixtures/insecure-ruby`; 2 tests
+including count assertions and a safe-Ruby no-false-positive check. Completes the major-backend-language set
+(JS/TS, Python, Go, Java, PHP, C#, Ruby).
 
 **2.36 result (architecture engine):** `ArchitectureScanner` builds a project-wide JS/TS module import graph
 (from `import`/`export … from`/`require()`/dynamic `import()` of relative specifiers, resolving TS-style `.js`

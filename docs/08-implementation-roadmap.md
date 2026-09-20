@@ -111,8 +111,12 @@ score/critical-blocker/high-risk deltas, the **release-decision change** (and wh
 and a single **`regressionDetected`** flag (any new Critical/High, a worsened decision, or a dimension drop ≥5).
 `renderScanDiff` produces a human report. Exposed over the API as `GET /scans/:id/diff?baseline=<id>&format=json|human`,
 which is **tenant-scoped** (a baseline in another org is 404, never disclosed, and audited) and returns 409 until
-both scans are COMPLETED. Tests: `tests/diff.test.ts` (two-fixture regression + self-diff = no change) and an
-HTTP test in `tests/api.test.ts` (regression detected, decision NO_GO, missing-baseline → 400).
+both scans are COMPLETED. It is also wired into the **CLI as a CI regression gate**: `npm run scan -- <dir>
+--baseline <result.json> [--fail-on-regression]` writes `diff.json`/`diff.md` and, with `--fail-on-regression`,
+exits non-zero when a regression is detected (§V.19). Tests: `tests/diff.test.ts` (two-fixture regression +
+self-diff = no change), an HTTP test in `tests/api.test.ts` (regression detected, decision NO_GO,
+missing-baseline → 400), and `tests/cli-baseline.test.ts` (drives the real CLI: regression → exit 1, no
+regression → exit 0).
 
 **3.2 result (detection-quality benchmark):** `@qa/benchmark` runs the platform against the whole golden
 corpus (§X.1 "run the platform against itself") and measures **recall** of the seeded defects (§X.4). The

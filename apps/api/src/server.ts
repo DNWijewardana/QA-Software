@@ -15,6 +15,7 @@
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
  *   GET  /scans/:scanId/findings          filter ?severity=&status=
  *   GET  /scans/:scanId/report?format=human|html|json|sarif|junit|csv|cyclonedx
+ *   GET  /scans/:scanId/diff?baseline=<scanId>&format=json|human   differential analysis (§VII.10)
  */
 
 import http from 'node:http';
@@ -22,6 +23,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { assertAllowedRemote, isRemoteTarget, renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
+import { diffScans, renderScanDiff } from '@qa/core';
 import {
   InMemoryAuditStore,
   InMemoryJobQueue,
@@ -306,6 +308,33 @@ export function createApiServer(config: ApiConfig): ApiHandle {
           default:
             return json(res, 400, { error: 'bad_format', message: `unknown format '${format}'` });
         }
+      }
+
+      // GET /scans/:scanId/diff?baseline=<scanId>&format=json|human  (differential analysis §VII.10)
+      if (method === 'GET' && parts.length === 3 && parts[2] === 'diff') {
+        if (record.state !== 'COMPLETED' || !record.result) {
+          return json(res, 409, { error: 'not_ready', state: record.state, progress: record.progress });
+        }
+        const baselineId = url.searchParams.get('baseline');
+        if (!baselineId) {
+          return json(res, 400, { error: 'missing_baseline', message: 'query param ?baseline=<scanId> is required' });
+        }
+        const baseline = await service.get(baselineId);
+        // Tenant isolation (§VIII.8): a baseline in another org is reported as not-found, never disclosed.
+        if (!baseline || baseline.orgId !== principal.orgId) {
+          if (baseline && baseline.orgId !== principal.orgId) {
+            await audit.append({ orgId: principal.orgId, actor: principal.keyId, action: 'scan.access.denied', target: baselineId });
+          }
+          return json(res, 404, { error: 'not_found', message: `scan ${baselineId} not found` });
+        }
+        if (baseline.state !== 'COMPLETED' || !baseline.result) {
+          return json(res, 409, { error: 'baseline_not_ready', state: baseline.state, progress: baseline.progress });
+        }
+        const diff = diffScans(baseline.result, record.result);
+        const format = (url.searchParams.get('format') ?? 'json').toLowerCase();
+        if (format === 'human') return send(res, 200, renderScanDiff(diff), 'text/markdown; charset=utf-8');
+        if (format === 'json') return json(res, 200, diff);
+        return json(res, 400, { error: 'bad_format', message: `unknown format '${format}'` });
       }
     }
 

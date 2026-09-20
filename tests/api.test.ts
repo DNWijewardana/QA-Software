@@ -138,4 +138,45 @@ describe('API scan lifecycle', () => {
   it('returns 404 for an unknown scan and 409 before completion result is ready', async () => {
     expect((await fetch(`${base}/scans/nope`)).status).toBe(404);
   });
+
+  it('differential analysis: compares two scans and reports a regression (§VII.10)', async () => {
+    // Baseline: the architecture fixture (no Critical). Current: the vulnerable sample (seeded Critical).
+    const baseSubmit = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: path.join(fixturesRoot, 'bad-architecture') }),
+    });
+    const { scanId: baselineId } = (await baseSubmit.json()) as { scanId: string };
+    await waitForCompletion(baselineId);
+
+    const curSubmit = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: fixtureDir }),
+    });
+    const { scanId: currentId } = (await curSubmit.json()) as { scanId: string };
+    await waitForCompletion(currentId);
+
+    // Missing baseline param → 400.
+    expect((await fetch(`${base}/scans/${currentId}/diff`)).status).toBe(400);
+
+    // JSON diff shows the introduced Critical and a worsened decision.
+    const diffRes = await fetch(`${base}/scans/${currentId}/diff?baseline=${baselineId}`);
+    expect(diffRes.status).toBe(200);
+    const diff = (await diffRes.json()) as {
+      regressionDetected: boolean;
+      decision: { current: string };
+      bySeverity: { added: Record<string, number> };
+      findings: { added: Array<{ ruleId: string }> };
+    };
+    expect(diff.regressionDetected).toBe(true);
+    expect(diff.decision.current).toBe('NO_GO');
+    expect(diff.bySeverity.added.Critical).toBeGreaterThan(0);
+    expect(diff.findings.added.some((f) => f.ruleId === 'SEC-SECRET-001')).toBe(true);
+
+    // Human diff renders.
+    const humanDiff = await fetch(`${base}/scans/${currentId}/diff?baseline=${baselineId}&format=human`);
+    expect(humanDiff.headers.get('content-type')).toContain('text/markdown');
+    expect(await humanDiff.text()).toContain('Differential Analysis');
+  });
 });

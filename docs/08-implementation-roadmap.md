@@ -160,6 +160,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.33 | Java security engine (§V.7 — Runtime.exec/SQL-concat/readObject/ECB → Security dim) | ✅ |
 | 2.34 | PHP security engine (§V.7 — eval/shell-exec/SQL-concat/unserialize/LFI/XSS/weak-hash → Security dim) | ✅ |
 | 2.35 | C#/.NET security engine (§V.7 — Process.Start/SQL-concat/BinaryFormatter/TLS-skip/weak-cipher/hash → Security dim) | ✅ |
+| 2.36 | Architecture-quality engine (§V.10 — import cycles/god modules/deep relative imports → Maintainability dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -233,6 +234,19 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.36 result (architecture engine):** `ArchitectureScanner` builds a project-wide JS/TS module import graph
+(from `import`/`export … from`/`require()`/dynamic `import()` of relative specifiers, resolving TS-style `.js`
+specifiers back to `.ts` source, and only counting edges that resolve to a file in the project) and flags
+**import cycles** (`ARCH-CIRCULAR-DEP-001`, Medium, CWE-1047), **god modules** with excessive internal
+fan-out (`ARCH-GOD-MODULE-001`, Low, CWE-1048), and **deep relative imports** climbing ≥4 levels
+(`ARCH-DEEP-RELATIVE-IMPORT-001`, Informational) — scoring under the Maintainability dimension (§V.10 folds
+architecture under maintainability; `Architecture → Maintainability` mapping added to the orchestrator).
+Cycles are canonicalized and deduplicated so a cycle is reported once regardless of entry point, and only
+resolvable relative imports become edges (external packages never create phantom cycles). Committed fixture
+`fixtures/bad-architecture` (a→b→c→a cycle + a 4-level-deep import); 3 tests, including a god-module runtime
+temp project and a clean-project no-false-positive check. The benchmark precision gate confirms the engine
+introduces no unaccounted detections on the rest of the corpus.
 
 **2.35 result (C#/.NET engine):** `CSharpScanner` flags C# security anti-patterns — `Process.Start` built
 from input (CWE-78), `SqlCommand`/`CommandText` built by concatenation/interpolation (CWE-89), insecure

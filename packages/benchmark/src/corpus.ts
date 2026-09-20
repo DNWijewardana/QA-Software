@@ -123,4 +123,10 @@ export const GOLDEN_CORPUS: CorpusEntry[] = [
     fixture: 'insecure-csharp',
     expected: ['CS-PROCESS-START-001', 'CS-SQL-CONCAT-001', 'CS-DESERIALIZE-001', 'CS-CERT-VALIDATION-001', 'CS-WEAK-CIPHER-001', 'CS-WEAK-HASH-001'],
   },
+  {
+    fixture: 'bad-architecture',
+    // Seeds an a→b→c→a import cycle and a 4-level-deep relative import. (God-module fan-out is covered by
+    // the unit test's runtime temp project, not a committed fixture.)
+    expected: ['ARCH-CIRCULAR-DEP-001', 'ARCH-DEEP-RELATIVE-IMPORT-001'],
+  },
 ];

@@ -10,6 +10,7 @@ import { prepareSource, runScan } from '@qa/orchestrator';
 import type { JobProcessor, QueuedMessage } from './queue.js';
 import type { ScanStore } from './store.js';
 import { progressForStage, stageToState, type ScanJobPayload } from './types.js';
+import { deriveEvents, failedEvent, type WebhookEmitter } from './webhooks.js';
 
 export interface ScanProcessorOptions {
   environment?: string;
@@ -20,6 +21,8 @@ export interface ScanProcessorOptions {
   enforceRemotePolicy?: boolean;
   /** Parent directory for temporary clones of remote sources. Defaults to the OS temp dir. */
   tmpRoot?: string;
+  /** Optional webhook emitter (§VI.10). Delivery is best-effort and never fails the scan. */
+  webhook?: WebhookEmitter;
 }
 
 export function createScanProcessor(
@@ -58,9 +61,26 @@ export function createScanProcessor(
         result,
         progress: progressForStage('COMPLETED'),
       });
+      if (opts.webhook) {
+        const orgId = (await store.get(scanId))?.orgId ?? 'default';
+        // Best-effort: a webhook failure must never fail the scan (§VI.7).
+        try {
+          await opts.webhook.emit(deriveEvents(result, orgId));
+        } catch {
+          /* delivery is best-effort */
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       await store.update(scanId, { state: 'FAILED', error: message });
+      if (opts.webhook) {
+        const orgId = (await store.get(scanId))?.orgId ?? 'default';
+        try {
+          await opts.webhook.emit([failedEvent(scanId, orgId, message)]);
+        } catch {
+          /* delivery is best-effort */
+        }
+      }
       throw err; // let the queue decide retry / dead-letter
     } finally {
       await cleanup(); // remove any temp clone

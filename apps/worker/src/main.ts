@@ -15,20 +15,29 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  HttpWebhookEmitter,
   InMemoryJobQueue,
   InMemoryScanStore,
   ScanService,
   startWorker,
   type ScanJobPayload,
+  type WebhookEmitter,
 } from '@qa/jobs';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
+
+/** Build a webhook emitter from env (QA_WEBHOOK_URL/QA_WEBHOOK_SECRET), or undefined when not configured. */
+function webhookFromEnv(): WebhookEmitter | undefined {
+  const url = process.env.QA_WEBHOOK_URL;
+  if (!url) return undefined;
+  return new HttpWebhookEmitter({ url, secret: process.env.QA_WEBHOOK_SECRET });
+}
 
 async function runDistributed(redisUrl: string, dbUrl: string): Promise<void> {
   const { BullMqJobQueue, createPostgresStore } = await import('@qa/jobs/adapters');
   const pg = await createPostgresStore(dbUrl);
   const queue = new BullMqJobQueue<ScanJobPayload>({ redisUrl, queueName: 'qa-scans' });
-  startWorker(pg.store, queue, { environment: 'worker-distributed' });
+  startWorker(pg.store, queue, { environment: 'worker-distributed', webhook: webhookFromEnv() });
   console.error('[qa-worker] distributed consumer started (Postgres + BullMQ). Waiting for jobs. Ctrl-C to stop.');
 
   const shutdown = async () => {

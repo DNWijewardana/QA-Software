@@ -34,6 +34,7 @@ import {
   type JobQueue,
   type ScanJobPayload,
   type ScanStore,
+  type WebhookEmitter,
 } from '@qa/jobs';
 import { resolveWithinAllowedRoots } from './security.js';
 import { authenticate, canSubmitScan, type ApiKeyConfig, type Principal, type Role } from './auth.js';
@@ -63,6 +64,8 @@ export interface ApiConfig {
   auditStore?: AuditStore;
   /** per-key request budget (§VI.9). Default 300 requests / 60s. */
   rateLimit?: { limit: number; windowMs: number };
+  /** optional webhook emitter (§VI.10) for the embedded worker to notify on scan events. */
+  webhook?: WebhookEmitter;
 }
 
 export interface ApiHandle {
@@ -99,7 +102,7 @@ export function createApiServer(config: ApiConfig): ApiHandle {
   // Embed the worker only in the single-process (in-memory) deployment. When a distributed queue is
   // injected, the worker runs as a SEPARATE process (apps/worker) consuming the shared Redis broker.
   const embedWorker = config.embedWorker ?? config.queue === undefined;
-  if (embedWorker) startWorker(store, queue, { environment: 'api-embedded-worker' });
+  if (embedWorker) startWorker(store, queue, { environment: 'api-embedded-worker', webhook: config.webhook });
 
   const apiKeys = config.apiKeys ?? [];
   const authEnabled = apiKeys.length > 0;

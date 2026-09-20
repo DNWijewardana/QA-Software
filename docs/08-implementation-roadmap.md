@@ -76,6 +76,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 | 3.6 | Differential / baseline analysis (§VII.10) — scan-to-scan diff, regression detection, API compare endpoint | ✅ |
 | 3.7 | Configurable policy engine (§VII.11) — per-scan weights + High-budget + evidence gates (Critical always blocks) | ✅ |
 | 3.8 | False-positive / suppression management (§VII.17) — scoped, auditable, expiring; Critical never suppressible | ✅ |
+| 3.9 | Webhooks / notifications (§VI.10, §111) — signed (HMAC), retried, idempotent scan-event delivery | ✅ |
 | 3.5 | PDF/HTML report rendering; notifications/webhooks; SCM integrations | ☐ |
 
 **3.1 result (auth + multi-tenancy):** the API supports opt-in API-key authentication (enforced when
@@ -103,6 +104,16 @@ It only ever INSERTs — production revokes UPDATE/DELETE on the table so the ch
 rewritten. `createPostgresBackends()` provisions the scan store + audit store on one shared pool, and the API
 uses it in distributed mode. `tests/postgres-audit.test.ts` runs the real SQL via pg-mem: chain verifies,
 listing is org-scoped, and a simulated `UPDATE` is detected by `verify()`.
+
+**3.9 result (webhooks / notifications):** `@qa/jobs/webhooks` emits scan events to an external sink (§VI.10,
+§111). `deriveEvents(result)` produces `scan.completed` (always), `critical.finding` (when criticalBlockers>0),
+and `quality-gate.failed` (NO_GO / GO_WITH_CONDITIONS); a `scan.failed` event fires on error. `HttpWebhookEmitter`
+POSTs each subscribed event as JSON, **HMAC-SHA256-signed** (`X-QA-Signature: sha256=…` over the exact body),
+with a unique `X-QA-Delivery` id for idempotency, a request timeout, and a bounded retry. Delivery is
+**best-effort and never fails the scan** (§VI.7). Wired into the scan processor (`ScanProcessorOptions.webhook`)
+and configured by env (`QA_WEBHOOK_URL`/`QA_WEBHOOK_SECRET`) in both the API's embedded worker and the standalone
+worker. `tests/webhooks.test.ts` (3) covers the signature, a retry-then-succeed against an in-process sink, and
+end-to-end delivery of the three signed events for a NO_GO scan.
 
 **3.8 result (suppression / false-positive management):** `Suppression` + `applySuppressions`/`validateSuppression`
 (`packages/core/suppression.ts`) implement the §VII.17 false-positive workflow. A suppression is **scoped**

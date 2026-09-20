@@ -11,9 +11,16 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AuditStore, JobQueue, ScanJobPayload, ScanStore } from '@qa/jobs';
+import { HttpWebhookEmitter, type AuditStore, type JobQueue, type ScanJobPayload, type ScanStore, type WebhookEmitter } from '@qa/jobs';
 import { createApiServer } from './server.js';
 import { parseApiKeys } from './auth.js';
+
+/** Build a webhook emitter from env (QA_WEBHOOK_URL/QA_WEBHOOK_SECRET), or undefined when not configured. */
+function webhookFromEnv(): WebhookEmitter | undefined {
+  const url = process.env.QA_WEBHOOK_URL;
+  if (!url) return undefined;
+  return new HttpWebhookEmitter({ url, secret: process.env.QA_WEBHOOK_SECRET });
+}
 
 const repoRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
 const port = Number(process.env.QA_PORT ?? 4000);
@@ -47,7 +54,8 @@ async function main(): Promise<void> {
   }
 
   const apiKeys = parseApiKeys(process.env.QA_API_KEYS);
-  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue, auditStore, apiKeys });
+  const webhook = webhookFromEnv();
+  const { server } = createApiServer({ allowedRoots, evidenceRoot, store, queue, auditStore, apiKeys, webhook });
 
   server.listen(port, () => {
     console.error(`[qa-api] listening on http://localhost:${port} (SAFE_STATIC)`);

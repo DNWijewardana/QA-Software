@@ -33,7 +33,7 @@
 | 13 | Implementation Roadmap (this doc) | ✅ |
 | 14 | Testing Strategy (`09`) | ✅ |
 | 15 | Definition of Done | ✅ (see below) |
-| 16 | Compliance & Privacy Model | ☐ |
+| 16 | Compliance & Privacy Model (`11`) | ✅ |
 | 17 | AI/LLM Governance Model | ☐ (only if AI features enabled) |
 | 18 | Supply-Chain Security Model (`10`) | ✅ |
 

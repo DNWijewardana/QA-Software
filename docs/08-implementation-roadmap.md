@@ -29,7 +29,7 @@
 | 9 | Scoring Methodology (`05`) | ▶ |
 | 10 | Security Model (`06`) | ▶ |
 | 11 | Execution Sandbox Model (`06`) | ▶ |
-| 12 | UI/UX Information Architecture | ☐ |
+| 12 | UI/UX Information Architecture (`12`) | ✅ |
 | 13 | Implementation Roadmap (this doc) | ✅ |
 | 14 | Testing Strategy (`09`) | ✅ |
 | 15 | Definition of Done | ✅ (see below) |

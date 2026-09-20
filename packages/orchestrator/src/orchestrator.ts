@@ -18,7 +18,9 @@ import {
   computeOverall,
   decideRelease,
   mapCompliance,
+  resolvePolicy,
   type Assumption,
+  type ScanPolicy,
   type DimensionScore,
   type ExecutionManifest,
   type Finding,
@@ -64,6 +66,8 @@ export interface OrchestratorOptions {
   environment?: string;
   /** progress callback — real stage reporting, never faked (§VI.6). */
   onStage?: (stage: ScanStage) => void;
+  /** Configurable scoring/gate policy (§VII.11). Omitting it uses platform defaults unchanged. */
+  policy?: ScanPolicy;
 }
 
 async function walk(dir: string, root: string, acc: ProjectFile[]): Promise<void> {
@@ -154,6 +158,9 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   assertFindings(allFindings);
   await persistArtifacts(opts.evidenceDir, allArtifacts);
 
+  // Resolve the (optional) scoring/gate policy (§VII.11); omitting it reproduces platform defaults.
+  const policy = resolvePolicy(opts.policy);
+
   // Score each dimension that was actually analyzed.
   const scores: DimensionScore[] = [];
   for (const [dimension, cov] of dimAgg.entries()) {
@@ -164,6 +171,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
         findings: dimFindings,
         applicableChecks: cov.applicable,
         executedChecks: cov.executed,
+        weight: policy.weights[dimension],
       }),
     );
   }
@@ -177,8 +185,14 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   const { matrix: compliance, score: complianceScore } = mapCompliance(allFindings, ranEngines);
   scores.push(complianceScore);
 
-  const overall = computeOverall(scores, allFindings);
-  const releaseDecision = decideRelease(overall, allFindings);
+  const overall = computeOverall(scores, allFindings, {
+    coverageFloor: policy.coverageFloor,
+    overallCoverageThreshold: policy.minEvidenceCoverage,
+  });
+  const releaseDecision = decideRelease(overall, allFindings, {
+    maxHigh: policy.maxHigh,
+    minEvidenceCoverage: policy.minEvidenceCoverage,
+  });
 
   const completedAt = new Date().toISOString();
   const manifest: ExecutionManifest = {

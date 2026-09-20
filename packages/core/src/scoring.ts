@@ -185,20 +185,22 @@ export function computeOverall(
 export function decideRelease(
   overall: OverallResult,
   findings: Finding[],
-  opts: { maxHigh?: number } = {},
+  opts: { maxHigh?: number; minEvidenceCoverage?: number } = {},
 ): ReleaseDecisionResult {
   const maxHigh = opts.maxHigh ?? 0;
+  const minEvidenceCoverage = opts.minEvidenceCoverage ?? 0.4;
   const gatesEvaluated: GateResult[] = [];
   const conditions: string[] = [];
 
+  // §VII.8 / Rule 22-23: a Critical finding ALWAYS blocks — this is never configurable by policy.
   const criticalFail = findings.some((f) => f.status === 'FAIL' && f.severity === 'Critical');
   gatesEvaluated.push({ gate: 'no-critical-findings', result: criticalFail ? 'FAIL' : 'PASS' });
 
   const highCount = findings.filter((f) => f.status === 'FAIL' && f.severity === 'High').length;
   gatesEvaluated.push({ gate: `max-high-findings(${maxHigh})`, result: highCount > maxHigh ? 'FAIL' : 'PASS' });
 
-  const evidenceGate = overall.evidenceCoverage >= 0.4 ? 'PASS' : 'INSUFFICIENT_EVIDENCE';
-  gatesEvaluated.push({ gate: 'minimum-evidence-coverage', result: evidenceGate });
+  const evidenceGate = overall.evidenceCoverage >= minEvidenceCoverage ? 'PASS' : 'INSUFFICIENT_EVIDENCE';
+  gatesEvaluated.push({ gate: `minimum-evidence-coverage(${minEvidenceCoverage})`, result: evidenceGate });
 
   // Never GO if critical evidence is missing (§VII.9).
   if (evidenceGate === 'INSUFFICIENT_EVIDENCE' || overall.score === null) {

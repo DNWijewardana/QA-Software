@@ -12,3 +12,4 @@ export * from './scoring.js';
 export * from './redaction.js';
 export * from './compliance.js';
 export * from './diff.js';
+export * from './policy.js';

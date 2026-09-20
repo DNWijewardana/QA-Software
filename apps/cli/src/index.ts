@@ -17,7 +17,7 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { diffScans, renderScanDiff, type ScanResult } from '@qa/core';
+import { diffScans, renderScanDiff, type ScanPolicy, type ScanResult } from '@qa/core';
 import { validateScanResult } from '@qa/contracts';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import { isRemoteTarget, newScanId, prepareSource, renderHumanReport, runScan } from '@qa/orchestrator';
@@ -31,6 +31,8 @@ interface Args {
   baseline: string;
   /** Exit non-zero when the diff detects a regression. */
   failOnRegression: boolean;
+  /** Optional path to a JSON policy file (weights/gates, §VII.11). */
+  policyPath: string;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -39,17 +41,19 @@ function parseArgs(argv: string[]): Args {
   let jsonOnly = false;
   let baseline = '';
   let failOnRegression = false;
+  let policyPath = '';
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--out') outDir = argv[++i] ?? '';
     else if (a === '--json-only') jsonOnly = true;
     else if (a === '--baseline') baseline = argv[++i] ?? '';
     else if (a === '--fail-on-regression') failOnRegression = true;
+    else if (a === '--policy') policyPath = argv[++i] ?? '';
     else positional.push(a);
   }
   const target = positional[0];
   if (!target) {
-    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression]');
+    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>]');
     process.exit(2);
   }
   return {
@@ -58,7 +62,18 @@ function parseArgs(argv: string[]): Args {
     jsonOnly,
     baseline: baseline ? path.resolve(baseline) : '',
     failOnRegression,
+    policyPath: policyPath ? path.resolve(policyPath) : '',
   };
+}
+
+/** Load a JSON policy file (§VII.11). Exits(2) on read/parse failure; values are clamped later by resolvePolicy. */
+async function loadPolicy(policyPath: string): Promise<ScanPolicy> {
+  try {
+    return JSON.parse(await fs.readFile(policyPath, 'utf8')) as ScanPolicy;
+  } catch (err) {
+    console.error(`[qa-scan] Cannot read policy: ${err instanceof Error ? err.message : err}`);
+    process.exit(2);
+  }
 }
 
 /** Load and validate a baseline scan result from disk (§VII.10). Exits(2) on read/parse/validation failure. */
@@ -96,6 +111,9 @@ async function main(): Promise<void> {
   const scanOut = path.join(args.outDir, scanId);
   const evidenceDir = path.join(scanOut, 'evidence');
 
+  const policy = args.policyPath ? await loadPolicy(args.policyPath) : undefined;
+  if (args.policyPath) console.error(`[qa-scan] Policy: ${args.policyPath}`);
+
   console.error(`[qa-scan] Mode: SAFE_STATIC  Target: ${source.origin.type}:${source.origin.ref}`);
   let result;
   try {
@@ -104,6 +122,7 @@ async function main(): Promise<void> {
       scanId,
       evidenceDir,
       environment: 'local-cli',
+      policy,
       onStage: (s) => console.error(`[qa-scan] stage: ${s}`),
     });
   } finally {

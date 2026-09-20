@@ -74,6 +74,7 @@ The web/api/worker are the **delivery layer** around this proven core, scheduled
 | 3.3 | Dynamic testing (authorized target): live security/perf/a11y-axe/API-contract | ☐ |
 | 3.4 | AST/real-tool engine adapters (Semgrep/ESLint/axe/ZAP) | ☐ |
 | 3.6 | Differential / baseline analysis (§VII.10) — scan-to-scan diff, regression detection, API compare endpoint | ✅ |
+| 3.7 | Configurable policy engine (§VII.11) — per-scan weights + High-budget + evidence gates (Critical always blocks) | ✅ |
 | 3.5 | PDF/HTML report rendering; notifications/webhooks; SCM integrations | ☐ |
 
 **3.1 result (auth + multi-tenancy):** the API supports opt-in API-key authentication (enforced when
@@ -101,6 +102,16 @@ It only ever INSERTs — production revokes UPDATE/DELETE on the table so the ch
 rewritten. `createPostgresBackends()` provisions the scan store + audit store on one shared pool, and the API
 uses it in distributed mode. `tests/postgres-audit.test.ts` runs the real SQL via pg-mem: chain verifies,
 listing is org-scoped, and a simulated `UPDATE` is detected by `verify()`.
+
+**3.7 result (configurable policy engine):** `ScanPolicy` + `resolvePolicy` (`packages/core/policy.ts`) make
+scoring **policy configurable per scan** (§VII.11, §86 — "never hard-code org policy"): per-dimension
+**weights**, the **High-findings budget** (`gates.maxHigh`), and the **minimum evidence coverage** / coverage
+floor. `runScan({ policy })` threads it into the score engine; the CLI accepts `--policy <policy.json>`.
+Omitting a policy — or any field — reproduces the platform defaults exactly (verified: all existing tests
+unchanged). **Honesty guard (§VII.8, Rule 22/23): a policy can NEVER un-block a Critical finding** — Critical
+findings always force NO_GO regardless of weights or the High budget, and the score-gaming/Critical-visibility
+invariants remain enforced independently. `tests/policy.test.ts` (4) covers clamping/defaults, a weight
+change, a gate flip (GO_WITH_CONDITIONS→GO when the High budget is raised), and the Critical-still-blocks guard.
 
 **3.6 result (differential / baseline analysis):** `diffScans(baseline, current)` (`packages/core/diff.ts`) is a
 pure, deterministic comparison of two scan results (§VII.10, §44, §84). Findings are matched by a **stable

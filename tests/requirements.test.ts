@@ -42,6 +42,24 @@ describe('RequirementsScanner (§V.1)', () => {
     expect(result.scores.some((s) => s.dimension === 'Functional')).toBe(true);
   });
 
+  it('builds a requirement→test traceability matrix (§VII.13)', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'qa-trace-'));
+    const result = await runScan({ projectDir: fixtureDir, scanId: 'scan_trace', evidenceDir: path.join(dir, 'ev') });
+    const t = result.traceability;
+    expect(t).toBeDefined();
+    // REQ-001/002/004 have ids (traceable); REQ-003 has none (untraceable).
+    expect(t!.summary.totalRequirements).toBe(3);
+    expect(t!.untraceableRequirements).toBe(1);
+    // The test file references REQ-001 and REQ-002 → covered; REQ-004 has no test → uncovered.
+    expect(t!.summary.covered).toBe(2);
+    expect(t!.summary.uncovered).toBe(1);
+    expect(t!.requirements.find((r) => r.id === 'REQ-004')?.covered).toBe(false);
+    expect(t!.requirements.find((r) => r.id === 'REQ-001')?.covered).toBe(true);
+    // REQ-999 in the test file is not a real requirement → a dangling reference.
+    expect(t!.danglingReferences.some((d) => d.ids.includes('REQ-999'))).toBe(true);
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
   it('parses Markdown requirements and does not flag a well-formed one', async () => {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'qa-req-md-'));
     await fs.writeFile(

@@ -243,4 +243,25 @@ export interface ScanResult {
   seo?: SeoReport;
   /** Findings suppressed by a scoped, auditable suppression (§VII.17). Recorded (never deleted) for audit. */
   suppressedFindings?: SuppressedFinding[];
+  /** Requirement→test traceability matrix (§VII.13), present when a requirements file exists. */
+  traceability?: TraceabilityMatrix;
+}
+
+/** A requirement and the test files that reference it (§VII.13). */
+export interface TraceabilityEntry {
+  id: string;
+  text: string;
+  tests: string[];
+  covered: boolean;
+}
+
+/** Requirement→test traceability matrix (§VII.13). Reported evidence — does not feed the quality dimensions. */
+export interface TraceabilityMatrix {
+  note: string;
+  requirements: TraceabilityEntry[];
+  /** Requirements with no id (cannot be traced to a test). */
+  untraceableRequirements: number;
+  /** Test files that reference a REQ id that is not in the requirements set (dangling references). */
+  danglingReferences: Array<{ testFile: string; ids: string[] }>;
+  summary: { totalRequirements: number; covered: number; uncovered: number; testFilesScanned: number };
 }

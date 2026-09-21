@@ -234,6 +234,15 @@ export const ScanResultSchema = z.object({
       }),
     )
     .optional(),
+  traceability: z
+    .object({
+      note: z.string(),
+      requirements: z.array(z.object({ id: z.string(), text: z.string(), tests: z.array(z.string()), covered: z.boolean() })),
+      untraceableRequirements: z.number().int(),
+      danglingReferences: z.array(z.object({ testFile: z.string(), ids: z.array(z.string()) })),
+      summary: z.object({ totalRequirements: z.number().int(), covered: z.number().int(), uncovered: z.number().int(), testFilesScanned: z.number().int() }),
+    })
+    .optional(),
 });
 
 export type ScanResultContract = z.infer<typeof ScanResultSchema>;

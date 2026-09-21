@@ -35,6 +35,7 @@ import {
 import { validateScanResult } from '@qa/contracts';
 import {
   analyzeSeo,
+  analyzeTraceability,
   defaultStaticEngines,
   profileProject,
   type Engine,
@@ -193,6 +194,9 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   const seo = await analyzeSeo(ctx);
   if (seo) assertFindings(seo.findings);
 
+  // Requirement→test traceability (§VII.13) — reported evidence; does not feed dimensions or the decision.
+  const traceability = await analyzeTraceability(ctx);
+
   // Compliance mapping (§IV.3): map findings → control-coverage matrix + a ComplianceReadiness score.
   const { matrix: compliance, score: complianceScore } = mapCompliance(active, ranEngines);
   scores.push(complianceScore);
@@ -274,6 +278,7 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     compliance,
     ...(seo ? { seo } : {}),
     ...(suppressed.length ? { suppressedFindings: suppressed } : {}),
+    ...(traceability ? { traceability } : {}),
   };
 
   // Validate against the canonical contract before returning (§X.4 — catch drift; fail loud).

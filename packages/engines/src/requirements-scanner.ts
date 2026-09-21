@@ -20,8 +20,20 @@ const AMBIGUOUS = /\b(should|may|might|could|approximately|about|some|several|ma
 /** Signals of a measurable/verifiable criterion. */
 const MEASURABLE = /\d|\b(within|less than|greater than|at least|at most|no more than|equal to|percent|%|ms|milliseconds?|seconds?|minutes?|requests?\/s|rps|p9\d|latency|throughput|exactly|between)\b/i;
 
-function isRequirementsFile(path: string): boolean {
+export function isRequirementsFile(path: string): boolean {
   return /(^|\/)requirements\.(md|ya?ml|json)$/i.test(path) || /(^|\/)requirements\//i.test(path);
+}
+
+/** A parsed requirement reduced to what traceability needs (id + text). */
+export interface ParsedRequirement {
+  id?: string;
+  text: string;
+}
+
+/** Parse a requirements file (structured YAML/JSON or Markdown) into id+text pairs. Reused by traceability. */
+export function parseRequirements(path: string, content: string): ParsedRequirement[] {
+  const reqs = isStructured(path) ? parseStructured(content, /\.json$/i.test(path)) : parseMarkdown(content);
+  return reqs.map((r) => ({ id: r.id, text: r.text }));
 }
 function isStructured(path: string): boolean {
   return /\.(ya?ml|json)$/i.test(path);

@@ -226,6 +226,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.37 | Ruby/Rails security engine (§V.7 — eval/command-injection/Marshal-YAML/SQLi/weak-hash → Security dim) | ✅ |
 | 2.40 | Rust security engine (§V.7 — shell/var Command::new, format! SQLi, unsafe, weak-hash → Security dim) | ✅ |
 | 2.41 | Requirements-quality engine (§V.1 — ambiguity/testability/atomicity/acceptance/id/priority → Functional dim) | ✅ |
+| 2.42 | Requirement→test traceability matrix (§VII.13 — covered/uncovered/dangling refs; reported, not scored) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -324,8 +325,15 @@ dimension (requirements quality → functional suitability, ISO/IEC 25010; a `Re
 orchestrator mapping was added) — this is the first engine to populate Functional. It is strictly
 **filename-scoped** (`requirements.{md,yaml,yml,json}` or a `requirements/` dir) so it never fires on ordinary
 source/config (zero impact on existing fixtures). Isolated fixture `fixtures/weak-requirements`; 2 tests
-(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). Note: the full
-requirement→test traceability matrix (§VII.13) is deferred to a follow-up.
+(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). **2.42 result (requirement→test traceability §VII.13):** `analyzeTraceability` (reusing the requirements
+parser) correlates each id'd requirement with the test files that reference its id, and reports **covered /
+uncovered** requirements, **untraceable** (id-less) requirements, and **dangling references** (a test citing a
+REQ id that isn't in the requirements set). Test files are detected by convention
+(`*.test.*`/`*.spec.*`/`_test.*`/`tests/`). It attaches a `traceability` matrix to the result (new optional
+contract field + human-report section) and, like SEO/compliance, is **reported evidence — it does not feed the
+quality dimensions or the release decision** (a project may enforce coverage via policy later). Verified on
+`fixtures/weak-requirements` (a `req.test.js` covers REQ-001/002, leaves REQ-004 uncovered, and cites the
+non-existent REQ-999 as a dangling reference); `tests/requirements.test.ts` asserts the matrix.
 
 **2.40 result (Rust engine):** `RustScanner` flags Rust security anti-patterns — `Command::new` with a shell
 (`sh`/`bash`/`cmd`) or a variable program name (CWE-78), SQL queries built with `format!()` (CWE-89), `unsafe`

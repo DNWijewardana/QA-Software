@@ -32,6 +32,7 @@ export * from './architecture-scanner.js';
 export * from './ruby-scanner.js';
 export * from './rust-scanner.js';
 export * from './requirements-scanner.js';
+export * from './traceability.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';

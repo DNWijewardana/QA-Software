@@ -138,6 +138,24 @@ export function renderHumanReport(r: ScanResult): string {
     p();
   }
 
+  // Requirement→test traceability (§VII.13) — reported evidence; does not affect scores.
+  if (r.traceability) {
+    const t = r.traceability;
+    p('## Requirements Traceability (§VII.13)');
+    p(`- **Requirements:** ${t.summary.totalRequirements}  ·  **Covered by a test:** ${t.summary.covered}  ·  **Uncovered:** ${t.summary.uncovered}  ·  **Test files scanned:** ${t.summary.testFilesScanned}`);
+    if (t.untraceableRequirements > 0) p(`- ${t.untraceableRequirements} requirement(s) have no id and cannot be traced.`);
+    const uncovered = t.requirements.filter((x) => !x.covered);
+    if (uncovered.length) {
+      p('Uncovered requirements (no referencing test):');
+      for (const u of uncovered) p(`- ${u.id} — ${u.text}`);
+    }
+    if (t.danglingReferences.length) {
+      p('Tests referencing unknown requirements:');
+      for (const d of t.danglingReferences) p(`- ${d.testFile}: ${d.ids.join(', ')}`);
+    }
+    p();
+  }
+
   // Suppressed findings (§VII.17) — recorded and auditable; excluded from scores/gates but never hidden.
   if (r.suppressedFindings && r.suppressedFindings.length) {
     p('## Suppressed Findings (auditable — excluded from scores/gates)');

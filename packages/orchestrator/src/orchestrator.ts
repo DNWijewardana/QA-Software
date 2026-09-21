@@ -297,5 +297,6 @@ function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Observability') return 'Observability';
   if (f.category === 'Reliability') return 'Reliability';
   if (f.category === 'Privacy') return 'Privacy';
+  if (f.category === 'Requirements') return 'Functional'; // requirements quality → functional suitability (§V.1)
   return 'Functional';
 }

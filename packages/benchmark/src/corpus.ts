@@ -137,4 +137,8 @@ export const GOLDEN_CORPUS: CorpusEntry[] = [
     // the unit test's runtime temp project, not a committed fixture.)
     expected: ['ARCH-CIRCULAR-DEP-001', 'ARCH-DEEP-RELATIVE-IMPORT-001'],
   },
+  {
+    fixture: 'weak-requirements',
+    expected: ['REQ-AMBIGUOUS-001', 'REQ-NOT-TESTABLE-001', 'REQ-NO-ACCEPTANCE-001', 'REQ-NOT-ATOMIC-001', 'REQ-MISSING-ID-001', 'REQ-MISSING-PRIORITY-001'],
+  },
 ];

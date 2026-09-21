@@ -1,0 +1,16 @@
+# FIXTURE — intentionally weak requirements for the golden corpus (spec X.3). NOT for real use.
+- id: REQ-001
+  text: The system should be fast and user-friendly.   # ambiguous + no acceptance + not testable
+  priority: High
+- id: REQ-002
+  text: The API shall return results and the UI shall display them and log errors.  # not atomic (multiple "shall")
+  priority: Medium
+  acceptanceCriteria:
+    - Results are returned within 200ms
+- text: Users can reset passwords.                      # missing id + missing priority + no acceptance + not testable
+# A well-formed requirement below must NOT be flagged:
+- id: REQ-004
+  text: The login endpoint shall respond within 300ms at 100 concurrent requests.
+  priority: High
+  acceptanceCriteria:
+    - p95 latency less than 300ms at 100 rps

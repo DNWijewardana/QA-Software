@@ -31,6 +31,7 @@ export * from './csharp-scanner.js';
 export * from './architecture-scanner.js';
 export * from './ruby-scanner.js';
 export * from './rust-scanner.js';
+export * from './requirements-scanner.js';
 
 import type { Engine } from './types.js';
 import { SecretScanner } from './secret-scanner.js';
@@ -59,6 +60,7 @@ import { CSharpScanner } from './csharp-scanner.js';
 import { ArchitectureScanner } from './architecture-scanner.js';
 import { RubyScanner } from './ruby-scanner.js';
 import { RustScanner } from './rust-scanner.js';
+import { RequirementsScanner } from './requirements-scanner.js';
 
 /** The engines available in the SAFE_STATIC scan. Extended per roadmap Phase 2+. */
 export function defaultStaticEngines(): Engine[] {
@@ -89,5 +91,6 @@ export function defaultStaticEngines(): Engine[] {
     new ArchitectureScanner(),
     new RubyScanner(),
     new RustScanner(),
+    new RequirementsScanner(),
   ];
 }

@@ -225,6 +225,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.36 | Architecture-quality engine (§V.10 — import cycles/god modules/deep relative imports → Maintainability dim) | ✅ |
 | 2.37 | Ruby/Rails security engine (§V.7 — eval/command-injection/Marshal-YAML/SQLi/weak-hash → Security dim) | ✅ |
 | 2.40 | Rust security engine (§V.7 — shell/var Command::new, format! SQLi, unsafe, weak-hash → Security dim) | ✅ |
+| 2.41 | Requirements-quality engine (§V.1 — ambiguity/testability/atomicity/acceptance/id/priority → Functional dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -313,6 +314,18 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.41 result (requirements-quality engine):** `RequirementsScanner` (§V.1) parses a requirements file —
+structured YAML/JSON (an array of `{id, text, acceptanceCriteria, priority}`) or a Markdown list — and flags
+**ambiguous/subjective** language (weasel words like "should"/"fast"/"user-friendly"), **not-testable**
+requirements (no acceptance criteria and no measurable condition), **missing acceptance criteria**,
+**non-atomic** requirements (multiple "shall/must"), and **missing id/priority**. It feeds the **Functional**
+dimension (requirements quality → functional suitability, ISO/IEC 25010; a `Requirements → Functional`
+orchestrator mapping was added) — this is the first engine to populate Functional. It is strictly
+**filename-scoped** (`requirements.{md,yaml,yml,json}` or a `requirements/` dir) so it never fires on ordinary
+source/config (zero impact on existing fixtures). Isolated fixture `fixtures/weak-requirements`; 2 tests
+(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). Note: the full
+requirement→test traceability matrix (§VII.13) is deferred to a follow-up.
 
 **2.40 result (Rust engine):** `RustScanner` flags Rust security anti-patterns — `Command::new` with a shell
 (`sh`/`bash`/`cmd`) or a variable program name (CWE-78), SQL queries built with `format!()` (CWE-89), `unsafe`

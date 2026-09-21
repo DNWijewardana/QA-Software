@@ -224,6 +224,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.35 | C#/.NET security engine (§V.7 — Process.Start/SQL-concat/BinaryFormatter/TLS-skip/weak-cipher/hash → Security dim) | ✅ |
 | 2.36 | Architecture-quality engine (§V.10 — import cycles/god modules/deep relative imports → Maintainability dim) | ✅ |
 | 2.37 | Ruby/Rails security engine (§V.7 — eval/command-injection/Marshal-YAML/SQLi/weak-hash → Security dim) | ✅ |
+| 2.40 | Rust security engine (§V.7 — shell/var Command::new, format! SQLi, unsafe, weak-hash → Security dim) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -312,6 +313,14 @@ alone). `ScanLive` fetches the full result via the `?format=json` proxy on compl
 verified live end-to-end (API + web): a scan of `insecure-k8s` renders 4 dimensions and the 14-control
 compliance matrix with 4 gaps. (Also cleaned up leaked API dev-processes from earlier phases that had held
 port 4000 with stale code.)
+
+**2.40 result (Rust engine):** `RustScanner` flags Rust security anti-patterns — `Command::new` with a shell
+(`sh`/`bash`/`cmd`) or a variable program name (CWE-78), SQL queries built with `format!()` (CWE-89), `unsafe`
+blocks/functions (CWE-119, memory-safety escape hatch — Low, manual-review), and MD5/SHA-1 (CWE-327) — feeding
+the Security dimension. Its `//` comment stripper tracks only double-quoted strings so Rust lifetimes (`'a`)
+never confuse it, and the command/SQL rules require a shell/variable/`format!` signal so benign calls
+(`Command::new("ls")`, `sqlx::query("SELECT 1")`, `Sha256::new()`) are not flagged. Isolated fixture
+`fixtures/insecure-rust`; 2 tests including a safe-Rust (with a lifetime) no-false-positive check.
 
 **2.37 result (Ruby/Rails engine):** `RubyScanner` flags Ruby security anti-patterns — `eval`/`instance_eval`
 (CWE-95), OS command injection via interpolated backticks/`%x`/`system`/`exec`/`IO.popen`/`Open3` (CWE-78),

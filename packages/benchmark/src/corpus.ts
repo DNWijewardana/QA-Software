@@ -128,6 +128,10 @@ export const GOLDEN_CORPUS: CorpusEntry[] = [
     expected: ['RB-EVAL-001', 'RB-COMMAND-EXEC-001', 'RB-DESERIALIZE-001', 'RB-SQL-INJECTION-001', 'RB-WEAK-HASH-001'],
   },
   {
+    fixture: 'insecure-rust',
+    expected: ['RS-COMMAND-EXEC-001', 'RS-SQL-FORMAT-001', 'RS-UNSAFE-001', 'RS-WEAK-HASH-001'],
+  },
+  {
     fixture: 'bad-architecture',
     // Seeds an a→b→c→a import cycle and a 4-level-deep relative import. (God-module fan-out is covered by
     // the unit test's runtime temp project, not a committed fixture.)

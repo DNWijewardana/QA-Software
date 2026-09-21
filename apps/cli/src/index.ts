@@ -35,6 +35,8 @@ interface Args {
   policyPath: string;
   /** Optional path to a JSON suppressions file (array of scoped suppressions, §VII.17). */
   suppressionsPath: string;
+  /** Optional scan cost/coverage tier (§IX.9): quick | standard | deep. */
+  tier?: 'quick' | 'standard' | 'deep';
 }
 
 function parseArgs(argv: string[]): Args {
@@ -45,6 +47,7 @@ function parseArgs(argv: string[]): Args {
   let failOnRegression = false;
   let policyPath = '';
   let suppressionsPath = '';
+  let tier: Args['tier'];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--out') outDir = argv[++i] ?? '';
@@ -53,11 +56,18 @@ function parseArgs(argv: string[]): Args {
     else if (a === '--fail-on-regression') failOnRegression = true;
     else if (a === '--policy') policyPath = argv[++i] ?? '';
     else if (a === '--suppressions') suppressionsPath = argv[++i] ?? '';
-    else positional.push(a);
+    else if (a === '--tier') {
+      const t = (argv[++i] ?? '').toLowerCase();
+      if (t !== 'quick' && t !== 'standard' && t !== 'deep') {
+        console.error(`Invalid --tier '${t}'. Use quick | standard | deep.`);
+        process.exit(2);
+      }
+      tier = t;
+    } else positional.push(a);
   }
   const target = positional[0];
   if (!target) {
-    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>] [--suppressions <suppressions.json>]');
+    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>] [--suppressions <suppressions.json>] [--tier quick|standard|deep]');
     process.exit(2);
   }
   return {
@@ -68,6 +78,7 @@ function parseArgs(argv: string[]): Args {
     failOnRegression,
     policyPath: policyPath ? path.resolve(policyPath) : '',
     suppressionsPath: suppressionsPath ? path.resolve(suppressionsPath) : '',
+    tier,
   };
 }
 
@@ -143,6 +154,7 @@ async function main(): Promise<void> {
       environment: 'local-cli',
       policy,
       suppressions,
+      tier: args.tier,
       onStage: (s) => console.error(`[qa-scan] stage: ${s}`),
     });
   } finally {

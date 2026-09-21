@@ -37,8 +37,10 @@ import {
   analyzeSeo,
   analyzeTraceability,
   defaultStaticEngines,
+  enginesForTier,
   profileProject,
   type Engine,
+  type ScanTier,
   type EngineArtifact,
   type ProjectFile,
   type ScanContext,
@@ -74,6 +76,10 @@ export interface OrchestratorOptions {
   policy?: ScanPolicy;
   /** Scoped, auditable false-positive suppressions (§VII.17). A suppression can never hide a Critical. */
   suppressions?: Suppression[];
+  /** Scan cost/coverage tier (§IX.9). Ignored when `engines` is provided explicitly. Default: full static. */
+  tier?: ScanTier;
+  /** Engine names to run when tier is 'custom'. */
+  engineNames?: string[];
 }
 
 async function walk(dir: string, root: string, acc: ProjectFile[]): Promise<void> {
@@ -107,7 +113,8 @@ async function persistArtifacts(evidenceDir: string, artifacts: EngineArtifact[]
 
 export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   const startedAt = new Date().toISOString();
-  const engines = opts.engines ?? defaultStaticEngines();
+  // Engine selection: explicit list wins; else the requested tier (§IX.9); else the full static set.
+  const engines = opts.engines ?? (opts.tier ? enginesForTier(opts.tier, opts.engineNames) : defaultStaticEngines());
   const environment = opts.environment ?? 'local';
   const stage = (s: ScanStage) => opts.onStage?.(s);
 
@@ -261,6 +268,9 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
     limitations: [
       'Only static analysis was performed (SAFE_STATIC). No dynamic, security-runtime, performance, or accessibility testing was executed.',
       `Engines that ran: ${engines.map((e) => e.name).join(', ')}. Absence of other findings is NOT evidence of their absence (§XII.2).`,
+      ...(opts.tier === 'quick'
+        ? ['QUICK scan profile: a reduced engine set ran for speed; coverage is intentionally limited — run the STANDARD/DEEP profile for full analysis (§IX.9).']
+        : []),
       ...(sbom
         ? ['Dependency components were inventoried into an SBOM, but were NOT checked against a CVE/OSV/KEV database (offline). Component vulnerability status is NOT_TESTED (§V.17).']
         : []),

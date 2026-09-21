@@ -95,3 +95,24 @@ export function defaultStaticEngines(): Engine[] {
     new RequirementsScanner(),
   ];
 }
+
+/** Scan cost/coverage tiers (§IX.9): QUICK (fast hygiene) · STANDARD/DEEP (full static) · CUSTOM (explicit). */
+export type ScanTier = 'quick' | 'standard' | 'deep' | 'custom';
+
+/** The fast, high-value hygiene subset for a QUICK scan (§IX.9 "static + basic functional"). */
+const QUICK_ENGINE_NAMES = new Set(['secret-scanner', 'code-quality', 'config-docs', 'dependency-scanner', 'requirements-scanner']);
+
+/**
+ * Select the engines for a scan tier (§IX.9). QUICK runs the fast hygiene subset; STANDARD and DEEP currently
+ * run the SAME full static set (they diverge once authorized DYNAMIC engines exist — DEEP will add them);
+ * CUSTOM runs exactly the named engines. An unknown custom name simply selects nothing for that name (safe).
+ */
+export function enginesForTier(tier: ScanTier, customNames?: string[]): Engine[] {
+  const all = defaultStaticEngines();
+  if (tier === 'custom') {
+    const wanted = new Set(customNames ?? []);
+    return all.filter((e) => wanted.has(e.name));
+  }
+  if (tier === 'quick') return all.filter((e) => QUICK_ENGINE_NAMES.has(e.name));
+  return all; // standard | deep → full static set
+}

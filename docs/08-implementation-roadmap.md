@@ -228,6 +228,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.40 | Rust security engine (§V.7 — shell/var Command::new, format! SQLi, unsafe, weak-hash → Security dim) | ✅ |
 | 2.41 | Requirements-quality engine (§V.1 — ambiguity/testability/atomicity/acceptance/id/priority → Functional dim) | ✅ |
 | 2.42 | Requirement→test traceability matrix (§VII.13 — covered/uncovered/dangling refs; reported, not scored) | ✅ |
+| 2.44 | Scan tiers / profiles (§IX.9 — QUICK/STANDARD/DEEP/CUSTOM engine selection; honest reduced-coverage note) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -333,7 +334,16 @@ dimension (requirements quality → functional suitability, ISO/IEC 25010; a `Re
 orchestrator mapping was added) — this is the first engine to populate Functional. It is strictly
 **filename-scoped** (`requirements.{md,yaml,yml,json}` or a `requirements/` dir) so it never fires on ordinary
 source/config (zero impact on existing fixtures). Isolated fixture `fixtures/weak-requirements`; 2 tests
-(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). **2.42 result (requirement→test traceability §VII.13):** `analyzeTraceability` (reusing the requirements
+(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). **2.44 result (scan tiers / profiles §IX.9):** `enginesForTier(tier)` selects the engines for a scan cost/
+coverage tier — **QUICK** (a fast hygiene subset: secret, code-quality, config-docs, dependency, requirements),
+**STANDARD/DEEP** (the full static set — they diverge only once authorized DYNAMIC engines exist, which DEEP
+will add), and **CUSTOM** (exactly the named engines). `runScan({ tier })` uses it (an explicit `engines` list
+still wins; omitting a tier is unchanged — full static). A QUICK scan adds an honest limitation line disclosing
+the intentionally-reduced coverage (§IX.9 "do not claim deep coverage if engines could not run"). Exposed via
+the CLI `--tier quick|standard|deep`. `tests/tiers.test.ts` (2) verifies deterministic selection and that a
+QUICK scan of the Python fixture yields no `PY-*` findings + the disclosure, while DEEP detects them.
+
+**2.42 result (requirement→test traceability §VII.13):** `analyzeTraceability` (reusing the requirements
 parser) correlates each id'd requirement with the test files that reference its id, and reports **covered /
 uncovered** requirements, **untraceable** (id-less) requirements, and **dangling references** (a test citing a
 REQ id that isn't in the requirements set). Test files are detected by convention

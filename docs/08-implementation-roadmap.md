@@ -198,6 +198,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.26 | `apps/web` Manual-review queue + Limitations panels (§IX.5, Rule 10 — honesty UI) | ✅ |
 | 2.38 | `apps/web` Compare-to-baseline view — surfaces the differential-analysis endpoint (§VII.10) | ✅ |
 | 2.39 | `apps/web` Audit-log viewer — tamper-evident chain + integrity status (§VIII.7, §IX.5) | ✅ |
+| 2.43 | `apps/web` Submit-form policy controls — per-scan High budget + Security weight (§VII.11) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -278,6 +279,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.43 result (web submit-form policy controls):** the submit form now has an accessible **Advanced options
+(policy)** `<details>` section with a **High-findings budget** (`gates.maxHigh`) and a **Security weight**
+(`weights.Security`). When set, the form includes a `policy` object in the `POST /api/scans` body (which the
+API already accepts and applies, §VII.11); left blank, platform defaults are used. This closes the UI loop on
+the policy engine (previously reachable only via CLI/API). `next build` clean; the API policy path is covered
+by `tests/api.test.ts` (and the honesty guard — a policy can never un-block a Critical — holds server-side).
 
 **2.39 result (web audit-log viewer):** a new `/audit` page (with a header nav link) surfaces the
 tamper-evident, hash-chained audit log (§VIII.7). It shows the **integrity status** prominently (✓ verified with

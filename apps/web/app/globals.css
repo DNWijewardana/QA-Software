@@ -106,6 +106,8 @@ a:hover { text-decoration: underline; }
 .site-nav { display: flex; gap: 1rem; }
 .site-nav a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; }
 .site-nav a:hover { color: var(--text); }
+.advanced { margin: 0.75rem 0; border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; }
+.advanced summary { cursor: pointer; font-weight: 600; }
 
 main {
   max-width: var(--maxw);

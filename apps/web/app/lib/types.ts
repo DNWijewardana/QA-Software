@@ -43,6 +43,12 @@ export interface TargetRoot {
   projects: Array<{ name: string; path: string }>;
 }
 
+/** Optional scoring/gate policy the submit form can send (§VII.11). Mirrors the API's accepted shape. */
+export interface ScanPolicyInput {
+  weights?: Record<string, number>;
+  gates?: { maxHigh?: number };
+}
+
 export interface DimensionScore {
   dimension: string;
   score: number;

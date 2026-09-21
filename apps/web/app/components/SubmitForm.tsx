@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TargetRoot } from '@/app/lib/types';
+import type { ScanPolicyInput, TargetRoot } from '@/app/lib/types';
 
 type Mode = 'local' | 'git';
 
@@ -16,13 +16,27 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
   const [mode, setMode] = useState<Mode>(options.length > 0 ? 'local' : 'git');
   const [selected, setSelected] = useState(options[0]?.value ?? '');
   const [gitUrl, setGitUrl] = useState('');
+  const [maxHigh, setMaxHigh] = useState('');
+  const [secWeight, setSecWeight] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Build an optional policy from the advanced inputs; undefined when nothing valid was entered. */
+  function buildPolicy(): ScanPolicyInput | undefined {
+    const policy: ScanPolicyInput = {};
+    const mh = Number(maxHigh);
+    if (maxHigh.trim() !== '' && Number.isFinite(mh) && mh >= 0) policy.gates = { maxHigh: Math.floor(mh) };
+    const sw = Number(secWeight);
+    if (secWeight.trim() !== '' && Number.isFinite(sw) && sw >= 0) policy.weights = { Security: sw };
+    return policy.gates || policy.weights ? policy : undefined;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const payload = mode === 'git' ? { sourceUrl: gitUrl.trim() } : { projectDir: selected };
-    if (mode === 'git' ? !payload.sourceUrl : !payload.projectDir) return;
+    const source = mode === 'git' ? { sourceUrl: gitUrl.trim() } : { projectDir: selected };
+    if (mode === 'git' ? !source.sourceUrl : !source.projectDir) return;
+    const policy = buildPolicy();
+    const payload = policy ? { ...source, policy } : source;
     setSubmitting(true);
     setError(null);
     try {
@@ -97,6 +111,40 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
           </p>
         </div>
       )}
+
+      <details className="advanced">
+        <summary>Advanced options (policy)</summary>
+        <p className="muted" style={{ marginTop: '0.5rem' }}>
+          Optional per-scan policy (§VII.11). Leave blank for platform defaults. A policy can never un-block a
+          Critical finding.
+        </p>
+        <div className="field" style={{ maxWidth: 320 }}>
+          <label htmlFor="max-high">High-findings budget (max High before GO_WITH_CONDITIONS)</label>
+          <input
+            id="max-high"
+            type="number"
+            min={0}
+            step={1}
+            inputMode="numeric"
+            placeholder="default 0"
+            value={maxHigh}
+            onChange={(e) => setMaxHigh(e.target.value)}
+          />
+        </div>
+        <div className="field" style={{ maxWidth: 320 }}>
+          <label htmlFor="sec-weight">Security dimension weight (relative)</label>
+          <input
+            id="sec-weight"
+            type="number"
+            min={0}
+            step={0.05}
+            inputMode="decimal"
+            placeholder="default 0.2"
+            value={secWeight}
+            onChange={(e) => setSecWeight(e.target.value)}
+          />
+        </div>
+      </details>
 
       {error ? (
         <div className="notice error" role="alert">

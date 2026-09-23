@@ -20,7 +20,7 @@ import path from 'node:path';
 import { diffScans, renderScanDiff, type ScanPolicy, type ScanResult, type Suppression } from '@qa/core';
 import { validateScanResult } from '@qa/contracts';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
-import { isRemoteTarget, newScanId, prepareSource, renderHumanReport, runScan } from '@qa/orchestrator';
+import { isRemoteTarget, newScanId, planScan, prepareSource, renderHumanReport, runScan, type ScanPlan } from '@qa/orchestrator';
 
 interface Args {
   /** Raw target: a local path OR an https git URL (resolved later by prepareSource). */
@@ -37,6 +37,30 @@ interface Args {
   suppressionsPath: string;
   /** Optional scan cost/coverage tier (§IX.9): quick | standard | deep. */
   tier?: 'quick' | 'standard' | 'deep';
+  /** Preview the scan plan (which engines will run) without executing (§IX.9/§126). */
+  plan: boolean;
+}
+
+/** Render a pre-execution scan plan (§126) — engines that will run; never invented counts. */
+function renderPlan(plan: ScanPlan): string {
+  const L: string[] = [];
+  L.push('# Scan Plan (preview — nothing executed yet)');
+  L.push('');
+  L.push(`- **Profile / tier:** ${plan.tier}`);
+  L.push(`- **Files:** ${plan.fileCount}`);
+  L.push(`- **Languages:** ${plan.languages.map((l) => `${l.name} (${(l.confidence * 100).toFixed(0)}%)`).join(', ') || 'none detected'}`);
+  L.push(`- **Frameworks:** ${plan.frameworks.join(', ') || 'none detected'}`);
+  L.push(`- **Engines that will run:** ${plan.applicableEngines} of ${plan.engines.length}`);
+  L.push('');
+  L.push('| Engine | Dimension | Will run |');
+  L.push('|---|---|---|');
+  for (const e of plan.engines) L.push(`| ${e.name} | ${e.dimension} | ${e.applicable ? 'yes' : 'no'} |`);
+  L.push('');
+  L.push('Manual review expected:');
+  for (const m of plan.manualReviewExpected) L.push(`- ${m}`);
+  L.push('');
+  L.push(`> ${plan.note}`);
+  return L.join('\n');
 }
 
 function parseArgs(argv: string[]): Args {
@@ -48,12 +72,14 @@ function parseArgs(argv: string[]): Args {
   let policyPath = '';
   let suppressionsPath = '';
   let tier: Args['tier'];
+  let plan = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === '--out') outDir = argv[++i] ?? '';
     else if (a === '--json-only') jsonOnly = true;
     else if (a === '--baseline') baseline = argv[++i] ?? '';
     else if (a === '--fail-on-regression') failOnRegression = true;
+    else if (a === '--plan') plan = true;
     else if (a === '--policy') policyPath = argv[++i] ?? '';
     else if (a === '--suppressions') suppressionsPath = argv[++i] ?? '';
     else if (a === '--tier') {
@@ -67,7 +93,7 @@ function parseArgs(argv: string[]): Args {
   }
   const target = positional[0];
   if (!target) {
-    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>] [--suppressions <suppressions.json>] [--tier quick|standard|deep]');
+    console.error('Usage: npm run scan -- <projectDir | https-git-url> [--out <dir>] [--json-only] [--plan] [--baseline <result.json>] [--fail-on-regression] [--policy <policy.json>] [--suppressions <suppressions.json>] [--tier quick|standard|deep]');
     process.exit(2);
   }
   return {
@@ -79,6 +105,7 @@ function parseArgs(argv: string[]): Args {
     policyPath: policyPath ? path.resolve(policyPath) : '',
     suppressionsPath: suppressionsPath ? path.resolve(suppressionsPath) : '',
     tier,
+    plan,
   };
 }
 
@@ -133,6 +160,17 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(`[qa-scan] Cannot read target: ${err instanceof Error ? err.message : err}`);
     process.exit(2);
+  }
+
+  // Plan preview (§IX.9/§126): show which engines will run, then stop — nothing is executed.
+  if (args.plan) {
+    try {
+      const plan = await planScan({ projectDir: source.dir, tier: args.tier });
+      console.log(renderPlan(plan));
+    } finally {
+      await source.cleanup();
+    }
+    process.exit(0);
   }
 
   const scanId = newScanId();

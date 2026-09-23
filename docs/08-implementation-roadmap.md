@@ -229,6 +229,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.41 | Requirements-quality engine (§V.1 — ambiguity/testability/atomicity/acceptance/id/priority → Functional dim) | ✅ |
 | 2.42 | Requirement→test traceability matrix (§VII.13 — covered/uncovered/dangling refs; reported, not scored) | ✅ |
 | 2.44 | Scan tiers / profiles (§IX.9 — QUICK/STANDARD/DEEP/CUSTOM engine selection; honest reduced-coverage note) | ✅ |
+| 2.45 | Scan-plan preview (§IX.9/§126 — which engines WILL run, before executing; never invents counts) | ✅ |
 | 2.10 | Distributed adapters: BullMQ/Redis queue + PostgreSQL store (implement `JobQueue`/`ScanStore`) | ✅ |
 
 **2.1–2.2 result:** `dependency-scanner` inventories declared deps into a CycloneDX 1.5 SBOM and flags
@@ -334,7 +335,15 @@ dimension (requirements quality → functional suitability, ISO/IEC 25010; a `Re
 orchestrator mapping was added) — this is the first engine to populate Functional. It is strictly
 **filename-scoped** (`requirements.{md,yaml,yml,json}` or a `requirements/` dir) so it never fires on ordinary
 source/config (zero impact on existing fixtures). Isolated fixture `fixtures/weak-requirements`; 2 tests
-(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). **2.44 result (scan tiers / profiles §IX.9):** `enginesForTier(tier)` selects the engines for a scan cost/
+(all 6 rules + a well-formed requirement not flagged + the Markdown-parsing path). **2.45 result (scan-plan preview §IX.9/§126):** `planScan({ projectDir, tier })` walks + profiles the project
+and asks each tier-selected engine whether it applies, returning a **`ScanPlan`** (tier, file count, detected
+languages/frameworks, the per-engine will-run list, applicable-engine count, expected manual-review items)
+**without executing any engine**. Per §126 it **never invents counts** — it reports only what it can determine
+(which engines apply); exact finding/check counts are known only after execution, and the plan's note says so.
+Exposed via the CLI `--plan` (prints the plan and exits, cleaning up any temp clone). `tests/plan.test.ts` (2)
+verifies the default plan lists applicable engines and a QUICK plan omits the deep engines.
+
+**2.44 result (scan tiers / profiles §IX.9):** `enginesForTier(tier)` selects the engines for a scan cost/
 coverage tier — **QUICK** (a fast hygiene subset: secret, code-quality, config-docs, dependency, requirements),
 **STANDARD/DEEP** (the full static set — they diverge only once authorized DYNAMIC engines exist, which DEEP
 will add), and **CUSTOM** (exactly the named engines). `runScan({ tier })` uses it (an explicit `engines` list

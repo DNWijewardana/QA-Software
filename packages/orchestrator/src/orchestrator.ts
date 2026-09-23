@@ -297,6 +297,74 @@ export async function runScan(opts: OrchestratorOptions): Promise<ScanResult> {
   return result;
 }
 
+export interface ScanEnginePlan {
+  name: string;
+  dimension: QualityDimension;
+  version: string;
+  /** true when the engine's appliesTo() matches this project + profile (it WILL run). */
+  applicable: boolean;
+}
+
+/** A pre-execution scan plan (§IX.9/§126). Reports what WILL run — never invented counts. */
+export interface ScanPlan {
+  tier: ScanTier | 'default';
+  fileCount: number;
+  languages: Array<{ name: string; confidence: number }>;
+  frameworks: string[];
+  engines: ScanEnginePlan[];
+  applicableEngines: number;
+  manualReviewExpected: string[];
+  note: string;
+}
+
+/**
+ * Compute a scan plan WITHOUT running the engines (§IX.9/§126). It walks + profiles the project and asks each
+ * tier-selected engine whether it applies, so the preview lists the engines that will actually run. It does
+ * NOT invent finding/check counts — those are known only after execution (§126, §X.10).
+ */
+export async function planScan(opts: {
+  projectDir: string;
+  tier?: ScanTier;
+  engines?: Engine[];
+  engineNames?: string[];
+}): Promise<ScanPlan> {
+  const engines = opts.engines ?? (opts.tier ? enginesForTier(opts.tier, opts.engineNames) : defaultStaticEngines());
+
+  const files: ProjectFile[] = [];
+  await walk(opts.projectDir, opts.projectDir, files);
+  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  const readText = async (file: ProjectFile): Promise<string> => {
+    if (file.size > MAX_FILE_BYTES) throw new Error('file too large to read');
+    return fs.readFile(file.absPath, 'utf8');
+  };
+  const profile: ProjectProfile = await profileProject({ files, readText });
+  const ctx: ScanContext = { scanId: 'plan', projectDir: opts.projectDir, files, profile, mode: 'SAFE_STATIC', readText };
+
+  const enginePlans: ScanEnginePlan[] = engines.map((e) => ({
+    name: e.name,
+    dimension: e.dimension,
+    version: e.version,
+    applicable: e.appliesTo(ctx),
+  }));
+  const applicable = enginePlans.filter((e) => e.applicable);
+
+  const manualReviewExpected = ['Subjective UX and architecture review'];
+  if (applicable.some((e) => e.name === 'html-a11y-scanner')) {
+    manualReviewExpected.push('Full WCAG 2.2 manual accessibility audit');
+  }
+
+  return {
+    tier: opts.tier ?? 'default',
+    fileCount: files.length,
+    languages: profile.languages,
+    frameworks: profile.frameworks.map((f) => f.name),
+    engines: enginePlans,
+    applicableEngines: applicable.length,
+    manualReviewExpected,
+    note: 'Plan lists the engines that WILL run for this project and profile. Exact finding/check counts are known only after execution — they are never invented (§126, §X.10).',
+  };
+}
+
 /** Which dimension a finding belongs to, derived from its category (kept explicit & auditable). */
 function engineDimension(f: Finding): QualityDimension {
   if (f.category === 'Security') return 'Security';

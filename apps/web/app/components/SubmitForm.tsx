@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ScanPlan, ScanPolicyInput, TargetRoot } from '@/app/lib/types';
+import type { ScanPlan, ScanPolicyInput, SuppressionInput, TargetRoot } from '@/app/lib/types';
+
+interface SupRow {
+  ruleId: string;
+  pathPattern: string;
+  reason: string;
+}
 
 type Mode = 'local' | 'git';
 
@@ -19,6 +25,7 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
   const [tier, setTier] = useState('');
   const [maxHigh, setMaxHigh] = useState('');
   const [secWeight, setSecWeight] = useState('');
+  const [supRows, setSupRows] = useState<SupRow[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<ScanPlan | null>(null);
@@ -32,6 +39,23 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
     const sw = Number(secWeight);
     if (secWeight.trim() !== '' && Number.isFinite(sw) && sw >= 0) policy.weights = { Security: sw };
     return policy.gates || policy.weights ? policy : undefined;
+  }
+
+  /** Build suppressions from the editor rows; a row needs a reason and a ruleId and/or path. */
+  function buildSuppressions(): SuppressionInput[] | undefined {
+    const now = new Date().toISOString();
+    const valid = supRows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => r.reason.trim() && (r.ruleId.trim() || r.pathPattern.trim()))
+      .map(({ r, i }) => ({
+        id: `web-${i + 1}`,
+        ...(r.ruleId.trim() ? { ruleId: r.ruleId.trim() } : {}),
+        ...(r.pathPattern.trim() ? { pathPattern: r.pathPattern.trim() } : {}),
+        reason: r.reason.trim(),
+        createdBy: 'web',
+        createdAt: now,
+      }));
+    return valid.length ? valid : undefined;
   }
 
   async function onPreviewPlan() {
@@ -63,9 +87,11 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
     const source = mode === 'git' ? { sourceUrl: gitUrl.trim() } : { projectDir: selected };
     if (mode === 'git' ? !source.sourceUrl : !source.projectDir) return;
     const policy = buildPolicy();
+    const suppressions = buildSuppressions();
     const payload: Record<string, unknown> = { ...source };
     if (policy) payload.policy = policy;
     if (tier) payload.tier = tier;
+    if (suppressions) payload.suppressions = suppressions;
     setSubmitting(true);
     setError(null);
     try {
@@ -186,6 +212,42 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
             onChange={(e) => setSecWeight(e.target.value)}
           />
         </div>
+
+        <fieldset className="field">
+          <legend>False-positive suppressions (§VII.17)</legend>
+          <p className="muted">
+            Scoped and auditable: each needs a reason and a rule id and/or a path. A suppression can never hide
+            a Critical finding.
+          </p>
+          {supRows.map((row, i) => (
+            <div key={i} className="row" style={{ gap: '0.5rem', alignItems: 'flex-end', marginBottom: '0.4rem' }}>
+              <input
+                aria-label={`Suppression ${i + 1} rule id`}
+                placeholder="rule id (e.g. RS-UNSAFE-001)"
+                value={row.ruleId}
+                onChange={(e) => setSupRows((rs) => rs.map((r, j) => (j === i ? { ...r, ruleId: e.target.value } : r)))}
+              />
+              <input
+                aria-label={`Suppression ${i + 1} path`}
+                placeholder="path (optional, e.g. src/legacy/**)"
+                value={row.pathPattern}
+                onChange={(e) => setSupRows((rs) => rs.map((r, j) => (j === i ? { ...r, pathPattern: e.target.value } : r)))}
+              />
+              <input
+                aria-label={`Suppression ${i + 1} reason`}
+                placeholder="reason (required)"
+                value={row.reason}
+                onChange={(e) => setSupRows((rs) => rs.map((r, j) => (j === i ? { ...r, reason: e.target.value } : r)))}
+              />
+              <button type="button" className="secondary" onClick={() => setSupRows((rs) => rs.filter((_, j) => j !== i))} aria-label={`Remove suppression ${i + 1}`}>
+                Remove
+              </button>
+            </div>
+          ))}
+          <button type="button" className="secondary" onClick={() => setSupRows((rs) => [...rs, { ruleId: '', pathPattern: '', reason: '' }])}>
+            Add suppression
+          </button>
+        </fieldset>
       </details>
 
       {error ? (

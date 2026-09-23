@@ -199,6 +199,7 @@ a precision/recall benchmark (X.4), and its report type (IX.1).
 | 2.38 | `apps/web` Compare-to-baseline view — surfaces the differential-analysis endpoint (§VII.10) | ✅ |
 | 2.39 | `apps/web` Audit-log viewer — tamper-evident chain + integrity status (§VIII.7, §IX.5) | ✅ |
 | 2.43 | `apps/web` Submit-form policy controls — per-scan High budget + Security weight (§VII.11) | ✅ |
+| 2.46 | `apps/web` Submit-form suppressions editor — scoped/auditable false-positive rows (§VII.17) | ✅ |
 | 2.8 | Compliance mapping (control-coverage matrix, IV.3) | ✅ |
 | 2.9 | Security (safe/authorized) · performance · AI/LLM evals | ☐ |
 | 2.11 | Dockerfile/container security engine (CIS Docker Benchmark → `CloudIaCPosture`) | ✅ |
@@ -281,6 +282,13 @@ providing check did not run (never silently satisfied). A prominent disclaimer s
 evidence only, not a certification (§I.5). Feeds the `ComplianceReadiness` dimension, a new top-level
 `compliance` field on the result (in the Zod contract), a `?format=compliance` API/web export, and a report
 section. 3 tests (unit statuses + end-to-end matrix).
+
+**2.46 result (web suppressions editor):** the submit form's Advanced options now include a **false-positive
+suppressions** editor — an add/remove list of rows (rule id, optional path, reason). Valid rows (a reason plus
+a rule id and/or path) are sent as `suppressions` in the submit body with `createdBy: 'web'` and a timestamp;
+the server validates them (scoped, no global ignore-all) and — the honesty guard — never lets one hide a
+Critical (§VII.17/§VII.8, already tested in `tests/api.test.ts`). This completes the UI config surface
+(policy + tier + suppressions all reachable from the submit form). `next build` clean.
 
 **2.43 result (web submit-form policy controls):** the submit form now has an accessible **Advanced options
 (policy)** `<details>` section with a **High-findings budget** (`gates.maxHigh`) and a **Security weight**

@@ -49,6 +49,16 @@ export interface ScanPolicyInput {
   gates?: { maxHigh?: number };
 }
 
+/** A scoped false-positive suppression the submit form can send (§VII.17). */
+export interface SuppressionInput {
+  id: string;
+  ruleId?: string;
+  pathPattern?: string;
+  reason: string;
+  createdBy: string;
+  createdAt: string;
+}
+
 /** Scan-plan preview (§IX.9/§126) — which engines will run, before executing. */
 export interface ScanPlan {
   tier: string;

@@ -10,7 +10,7 @@
  * Endpoints:
  *   GET  /health
  *   GET  /scans                          list (optional ?projectId=)
- *   POST /projects/:projectId/scans      { projectDir | sourceUrl, policy?, suppressions? } -> 202 { scanId }
+ *   POST /projects/:projectId/scans      { projectDir | sourceUrl, policy?, suppressions?, tier? } -> 202 { scanId }
  *   GET  /scans/:scanId                   job status + honest stage progress (no fake %)
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
  *   GET  /scans/:scanId/findings          filter ?severity=&status=
@@ -208,11 +208,18 @@ export function createApiServer(config: ApiConfig): ApiHandle {
         return json(res, 400, { error: 'bad_request', message: 'provide exactly one of projectDir or sourceUrl' });
       }
 
-      const submitInput: { projectId: string; projectDir?: string; sourceUrl?: string; evidenceRoot: string; orgId: string; policy?: ScanPolicy; suppressions?: Suppression[] } = {
+      const submitInput: { projectId: string; projectDir?: string; sourceUrl?: string; evidenceRoot: string; orgId: string; policy?: ScanPolicy; suppressions?: Suppression[]; tier?: 'quick' | 'standard' | 'deep' } = {
         projectId,
         evidenceRoot: config.evidenceRoot,
         orgId: principal.orgId,
       };
+      // Optional scan tier (§IX.9). The API accepts quick/standard/deep; 'custom' is a programmatic/CLI concern.
+      if (body.tier !== undefined) {
+        if (body.tier !== 'quick' && body.tier !== 'standard' && body.tier !== 'deep') {
+          return json(res, 400, { error: 'bad_request', message: "tier must be 'quick', 'standard', or 'deep'" });
+        }
+        submitInput.tier = body.tier;
+      }
       // Optional scoring/gate policy (§VII.11). Untrusted values are clamped/ignored by resolvePolicy;
       // a policy can never un-block a Critical finding.
       if (body.policy && typeof body.policy === 'object' && !Array.isArray(body.policy)) {

@@ -5,7 +5,7 @@
 
 import path from 'node:path';
 import type { ScanPolicy, Suppression } from '@qa/core';
-import { newScanId } from '@qa/orchestrator';
+import { newScanId, type ScanTier } from '@qa/orchestrator';
 import type { JobQueue } from './queue.js';
 import { createScanProcessor, type ScanProcessorOptions } from './processor.js';
 import type { ScanStore } from './store.js';
@@ -25,6 +25,10 @@ export interface SubmitScanInput {
   policy?: ScanPolicy;
   /** optional scoped, auditable false-positive suppressions (§VII.17) applied to this scan. */
   suppressions?: Suppression[];
+  /** optional scan cost/coverage tier (§IX.9). */
+  tier?: ScanTier;
+  /** engine names to run when tier is 'custom'. */
+  engineNames?: string[];
 }
 
 export class ScanService {
@@ -57,6 +61,8 @@ export class ScanService {
       evidenceDir: path.join(input.evidenceRoot, scanId, 'evidence'),
       policy: input.policy,
       suppressions: input.suppressions,
+      tier: input.tier,
+      engineNames: input.engineNames,
     });
     return record;
   }

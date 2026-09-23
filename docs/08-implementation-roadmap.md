@@ -341,7 +341,11 @@ will add), and **CUSTOM** (exactly the named engines). `runScan({ tier })` uses 
 still wins; omitting a tier is unchanged — full static). A QUICK scan adds an honest limitation line disclosing
 the intentionally-reduced coverage (§IX.9 "do not claim deep coverage if engines could not run"). Exposed via
 the CLI `--tier quick|standard|deep`. `tests/tiers.test.ts` (2) verifies deterministic selection and that a
-QUICK scan of the Python fixture yields no `PY-*` findings + the disclosure, while DEEP detects them.
+QUICK scan of the Python fixture yields no `PY-*` findings + the disclosure, while DEEP detects them. The tier
+is threaded through the **async delivery layer** too: `ScanJobPayload`/`SubmitScanInput` carry `tier` (+ custom
+`engineNames`), the worker's processor applies it, the API accepts `tier` (quick/standard/deep) in the
+`POST /projects/:id/scans` body (400 on an invalid value), and the web submit form has a **Scan profile**
+selector. `tests/api.test.ts` verifies a submit-time QUICK scan runs the reduced set and rejects an invalid tier.
 
 **2.42 result (requirement→test traceability §VII.13):** `analyzeTraceability` (reusing the requirements
 parser) correlates each id'd requirement with the test files that reference its id, and reports **covered /

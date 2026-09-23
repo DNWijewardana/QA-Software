@@ -7,3 +7,4 @@ export * from './orchestrator.js';
 export * from './report.js';
 export * from './ingest.js';
 export { newScanId, sha256 } from './util.js';
+export type { ScanTier } from '@qa/engines';

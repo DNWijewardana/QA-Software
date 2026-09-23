@@ -139,6 +139,33 @@ describe('API scan lifecycle', () => {
     expect((await fetch(`${base}/scans/nope`)).status).toBe(404);
   });
 
+  it('applies a submit-time scan tier (§IX.9): QUICK runs a reduced engine set', async () => {
+    const pyDir = path.join(fixturesRoot, 'insecure-python');
+
+    // QUICK excludes the deep security engines → no PY-* findings, and discloses reduced coverage.
+    const quick = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: pyDir, tier: 'quick' }),
+    });
+    const { scanId: quickId } = (await quick.json()) as { scanId: string };
+    await waitForCompletion(quickId);
+    const quickResult = (await (await fetch(`${base}/scans/${quickId}/result`)).json()) as {
+      findings: Array<{ ruleId: string }>;
+      limitations: string[];
+    };
+    expect(quickResult.findings.some((f) => f.ruleId.startsWith('PY-'))).toBe(false);
+    expect(quickResult.limitations.some((l) => l.includes('QUICK scan profile'))).toBe(true);
+
+    // An invalid tier is rejected.
+    const bad = await fetch(`${base}/projects/demo/scans`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: pyDir, tier: 'turbo' }),
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('applies submit-time suppressions (§VII.17), recording them and never hiding a Critical', async () => {
     const rubyDir = path.join(fixturesRoot, 'insecure-ruby');
 

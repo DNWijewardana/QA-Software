@@ -16,6 +16,7 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
   const [mode, setMode] = useState<Mode>(options.length > 0 ? 'local' : 'git');
   const [selected, setSelected] = useState(options[0]?.value ?? '');
   const [gitUrl, setGitUrl] = useState('');
+  const [tier, setTier] = useState('');
   const [maxHigh, setMaxHigh] = useState('');
   const [secWeight, setSecWeight] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +37,9 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
     const source = mode === 'git' ? { sourceUrl: gitUrl.trim() } : { projectDir: selected };
     if (mode === 'git' ? !source.sourceUrl : !source.projectDir) return;
     const policy = buildPolicy();
-    const payload = policy ? { ...source, policy } : source;
+    const payload: Record<string, unknown> = { ...source };
+    if (policy) payload.policy = policy;
+    if (tier) payload.tier = tier;
     setSubmitting(true);
     setError(null);
     try {
@@ -111,6 +114,19 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
           </p>
         </div>
       )}
+
+      <div className="field" style={{ maxWidth: 320 }}>
+        <label htmlFor="tier">Scan profile</label>
+        <select id="tier" value={tier} onChange={(e) => setTier(e.target.value)} aria-describedby="tier-help">
+          <option value="">Standard (default — full static analysis)</option>
+          <option value="quick">Quick (fast hygiene subset)</option>
+          <option value="deep">Deep (everything applicable)</option>
+        </select>
+        <p id="tier-help" className="muted">
+          Quick runs a reduced engine set for speed (coverage is intentionally limited). Standard and Deep run
+          the full static analysis (§IX.9).
+        </p>
+      </div>
 
       <details className="advanced">
         <summary>Advanced options (policy)</summary>

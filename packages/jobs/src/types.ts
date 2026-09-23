@@ -3,7 +3,7 @@
  */
 
 import type { JobState, ScanPolicy, ScanResult, Suppression } from '@qa/core';
-import { SCAN_STAGES, type ScanStage } from '@qa/orchestrator';
+import { SCAN_STAGES, type ScanStage, type ScanTier } from '@qa/orchestrator';
 
 export interface ScanJobPayload {
   scanId: string;
@@ -17,6 +17,10 @@ export interface ScanJobPayload {
   policy?: ScanPolicy;
   /** Optional scoped, auditable false-positive suppressions (§VII.17). Plain JSON. */
   suppressions?: Suppression[];
+  /** Optional scan cost/coverage tier (§IX.9). */
+  tier?: ScanTier;
+  /** Engine names to run when tier is 'custom'. */
+  engineNames?: string[];
 }
 
 /** Honest, stage-based progress — derived from the ordinal of the current stage, never fabricated (§VI.6). */

@@ -341,7 +341,11 @@ languages/frameworks, the per-engine will-run list, applicable-engine count, exp
 **without executing any engine**. Per §126 it **never invents counts** — it reports only what it can determine
 (which engines apply); exact finding/check counts are known only after execution, and the plan's note says so.
 Exposed via the CLI `--plan` (prints the plan and exits, cleaning up any temp clone). `tests/plan.test.ts` (2)
-verifies the default plan lists applicable engines and a QUICK plan omits the deep engines.
+verifies the default plan lists applicable engines and a QUICK plan omits the deep engines. Also exposed over
+the stack: the API `POST /projects/:id/plan { projectDir, tier? }` returns the plan synchronously (local
+projects only — path-guarded, RBAC-gated, runs no engines; a git URL → 400), and the web submit form has a
+**Preview plan** button that shows the engines that will run before "Start scan" (§126). `tests/api.test.ts`
+covers the plan endpoint (QUICK omits python-scanner, git-URL → 400, out-of-roots path → 403).
 
 **2.44 result (scan tiers / profiles §IX.9):** `enginesForTier(tier)` selects the engines for a scan cost/
 coverage tier — **QUICK** (a fast hygiene subset: secret, code-quality, config-docs, dependency, requirements),

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ScanPolicyInput, TargetRoot } from '@/app/lib/types';
+import type { ScanPlan, ScanPolicyInput, TargetRoot } from '@/app/lib/types';
 
 type Mode = 'local' | 'git';
 
@@ -21,6 +21,8 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
   const [secWeight, setSecWeight] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [plan, setPlan] = useState<ScanPlan | null>(null);
+  const [planning, setPlanning] = useState(false);
 
   /** Build an optional policy from the advanced inputs; undefined when nothing valid was entered. */
   function buildPolicy(): ScanPolicyInput | undefined {
@@ -30,6 +32,30 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
     const sw = Number(secWeight);
     if (secWeight.trim() !== '' && Number.isFinite(sw) && sw >= 0) policy.weights = { Security: sw };
     return policy.gates || policy.weights ? policy : undefined;
+  }
+
+  async function onPreviewPlan() {
+    if (mode !== 'local' || !selected) return;
+    setPlanning(true);
+    setError(null);
+    setPlan(null);
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ projectDir: selected, ...(tier ? { tier } : {}) }),
+      });
+      const body = (await res.json()) as ScanPlan & { message?: string; error?: string };
+      if (!res.ok || !Array.isArray(body.engines)) {
+        setError(body.message ?? body.error ?? `Plan preview failed (${res.status})`);
+        return;
+      }
+      setPlan(body);
+    } catch {
+      setError('Could not reach the platform API for the plan preview.');
+    } finally {
+      setPlanning(false);
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -167,13 +193,40 @@ export function SubmitForm({ targets }: { targets: TargetRoot[] }) {
           {error}
         </div>
       ) : null}
-      <button
-        type="submit"
-        disabled={submitting || (mode === 'local' ? !selected : !gitUrl.trim())}
-        aria-busy={submitting}
-      >
-        {submitting ? 'Submitting…' : 'Start scan'}
-      </button>
+
+      {plan ? (
+        <section aria-labelledby="plan-heading" className="panel" style={{ marginTop: '0.75rem' }} aria-live="polite">
+          <h3 id="plan-heading">Scan plan (preview — nothing executed yet)</h3>
+          <p className="muted">
+            Profile: {plan.tier} · Files: {plan.fileCount} · Languages:{' '}
+            {plan.languages.map((l) => l.name).join(', ') || 'none detected'} · Engines that will run:{' '}
+            {plan.applicableEngines} of {plan.engines.length}
+          </p>
+          <ul>
+            {plan.engines.filter((e) => e.applicable).map((e) => (
+              <li key={e.name}>
+                {e.name} <span className="muted">({e.dimension})</span>
+              </li>
+            ))}
+          </ul>
+          <p className="muted">{plan.note}</p>
+        </section>
+      ) : null}
+
+      <div className="row" style={{ gap: '0.75rem' }}>
+        <button
+          type="submit"
+          disabled={submitting || (mode === 'local' ? !selected : !gitUrl.trim())}
+          aria-busy={submitting}
+        >
+          {submitting ? 'Submitting…' : 'Start scan'}
+        </button>
+        {mode === 'local' ? (
+          <button type="button" className="secondary" onClick={() => void onPreviewPlan()} disabled={planning || !selected} aria-busy={planning}>
+            {planning ? 'Previewing…' : 'Preview plan'}
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }

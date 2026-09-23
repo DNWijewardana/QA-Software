@@ -49,6 +49,18 @@ export interface ScanPolicyInput {
   gates?: { maxHigh?: number };
 }
 
+/** Scan-plan preview (§IX.9/§126) — which engines will run, before executing. */
+export interface ScanPlan {
+  tier: string;
+  fileCount: number;
+  languages: Array<{ name: string; confidence: number }>;
+  frameworks: string[];
+  engines: Array<{ name: string; dimension: string; version: string; applicable: boolean }>;
+  applicableEngines: number;
+  manualReviewExpected: string[];
+  note: string;
+}
+
 export interface DimensionScore {
   dimension: string;
   score: number;

@@ -10,6 +10,7 @@
  * Endpoints:
  *   GET  /health
  *   GET  /scans                          list (optional ?projectId=)
+ *   POST /projects/:projectId/plan       { projectDir, tier? } -> 200 ScanPlan (preview; runs no engines)
  *   POST /projects/:projectId/scans      { projectDir | sourceUrl, policy?, suppressions?, tier? } -> 202 { scanId }
  *   GET  /scans/:scanId                   job status + honest stage progress (no fake %)
  *   GET  /scans/:scanId/result            full canonical ScanResult (when COMPLETED)
@@ -21,7 +22,7 @@
 import http from 'node:http';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { assertAllowedRemote, isRemoteTarget, renderHumanReport } from '@qa/orchestrator';
+import { assertAllowedRemote, isRemoteTarget, planScan, renderHumanReport } from '@qa/orchestrator';
 import { toCsv, toCycloneDx, toHtml, toJUnit, toSarif } from '@qa/reporters';
 import { diffScans, renderScanDiff, type ScanPolicy, type Suppression } from '@qa/core';
 import {
@@ -188,6 +189,30 @@ export function createApiServer(config: ApiConfig): ApiHandle {
       const records = await service.list(projectId);
       const scoped = records.filter((r) => r.orgId === principal.orgId);
       return json(res, 200, scoped.map(summarize));
+    }
+
+    // POST /projects/:projectId/plan  (scan-plan preview §IX.9/§126 — read-only, runs no engines)
+    if (method === 'POST' && parts.length === 3 && parts[0] === 'projects' && parts[2] === 'plan') {
+      if (!canSubmitScan(principal.role)) {
+        return json(res, 403, { error: 'forbidden', message: `Role '${principal.role}' may not plan scans.` });
+      }
+      let body: Record<string, unknown>;
+      try {
+        body = await readJsonBody(req);
+      } catch (e) {
+        return json(res, 400, { error: 'bad_request', message: e instanceof Error ? e.message : 'invalid body' });
+      }
+      const projectDir = typeof body.projectDir === 'string' ? body.projectDir.trim() : '';
+      if (!projectDir) {
+        return json(res, 400, { error: 'bad_request', message: 'plan preview requires a local projectDir (git URLs are planned at submit time)' });
+      }
+      if (body.tier !== undefined && body.tier !== 'quick' && body.tier !== 'standard' && body.tier !== 'deep') {
+        return json(res, 400, { error: 'bad_request', message: "tier must be 'quick', 'standard', or 'deep'" });
+      }
+      const check = resolveWithinAllowedRoots(projectDir, config.allowedRoots);
+      if (!check.ok) return json(res, 403, { error: 'forbidden_path', message: check.reason });
+      const plan = await planScan({ projectDir: check.resolved, tier: body.tier as 'quick' | 'standard' | 'deep' | undefined });
+      return json(res, 200, plan);
     }
 
     // POST /projects/:projectId/scans  (write — RBAC gated)

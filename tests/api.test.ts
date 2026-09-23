@@ -139,6 +139,43 @@ describe('API scan lifecycle', () => {
     expect((await fetch(`${base}/scans/nope`)).status).toBe(404);
   });
 
+  it('previews a scan plan without executing engines (§IX.9/§126)', async () => {
+    const res = await fetch(`${base}/projects/demo/plan`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: path.join(fixturesRoot, 'insecure-python'), tier: 'quick' }),
+    });
+    expect(res.status).toBe(200);
+    const plan = (await res.json()) as {
+      tier: string;
+      fileCount: number;
+      engines: Array<{ name: string; applicable: boolean }>;
+      note: string;
+    };
+    expect(plan.tier).toBe('quick');
+    expect(plan.fileCount).toBeGreaterThan(0);
+    // QUICK omits python-scanner from the plan entirely.
+    expect(plan.engines.some((e) => e.name === 'python-scanner')).toBe(false);
+    expect(plan.engines.some((e) => e.name === 'secret-scanner')).toBe(true);
+    expect(plan.note).toMatch(/never invented/i);
+
+    // A git URL is not supported for the (synchronous) plan preview → 400.
+    const remote = await fetch(`${base}/projects/demo/plan`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sourceUrl: 'https://github.com/o/r.git' }),
+    });
+    expect(remote.status).toBe(400);
+
+    // A path outside the allowed roots is rejected (§VIII.5).
+    const outside = await fetch(`${base}/projects/demo/plan`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ projectDir: path.resolve(os.tmpdir()) }),
+    });
+    expect(outside.status).toBe(403);
+  });
+
   it('applies a submit-time scan tier (§IX.9): QUICK runs a reduced engine set', async () => {
     const pyDir = path.join(fixturesRoot, 'insecure-python');
 
